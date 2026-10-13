@@ -419,11 +419,10 @@ autoConnect();
 
         // JIKA ROOM SUDAH ADA (JADI JOINER)
         if (roomSnap.exists() && roomSnap.data().offer) {
-    isCaller = false;
-    const roomData = roomSnap.data();
-    
-    // --- TAMBAHKAN KODE BARU INI ---
-    const unsubRoom = onSnapshot(roomRef, snapshot => {
+            isCaller = false;
+            const roomData = roomSnap.data();
+
+            const unsubRoom = onSnapshot(roomRef, snapshot => {
         if (!peerConnection) return;
         if (!snapshot.exists()) {
             updateLCD("DROPPED", "---", "✖");
@@ -432,9 +431,22 @@ autoConnect();
         }
     });
     unsubscribers.push(unsubRoom);
-    // -------------------------------
+            
+            const calleeCandidatesCollection = collection(roomRef, 'calleeCandidates');
+            peerConnection.addEventListener('icecandidate', event => {
+                if (event.candidate) addDoc(calleeCandidatesCollection, event.candidate.toJSON());
+            });
 
-    const calleeCandidatesCollection = collection(roomRef, 'calleeCandidates');
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(roomData.offer));
+            const answer = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answer);
+
+            await updateDoc(roomRef, { answer: { type: answer.type, sdp: answer.sdp } });
+            
+            showCallPanel("CH-1");
+            //updateLCD("CONNECTED", "CH-1", "✔");
+
+            const callerCandidatesCollection = collection(roomRef, 'callerCandidates');
             const unsubCaller = onSnapshot(callerCandidatesCollection, snapshot => {
                 if (!peerConnection) return;
                 snapshot.docChanges().forEach(async change => {
@@ -464,6 +476,12 @@ autoConnect();
 
             const unsubRoom = onSnapshot(roomRef, async snapshot => {
                 if (!peerConnection) return; 
+                if (!snapshot.exists()) {
+        updateLCD("DROPPED", "---", "✖");
+        hangUp();
+        setTimeout(() => window.location.reload(), 1000);
+        return;
+    }
                 const data = snapshot.data();
                 if (!peerConnection.currentRemoteDescription && data && data.answer) {
                     await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
