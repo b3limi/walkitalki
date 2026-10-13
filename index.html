@@ -692,7 +692,9 @@ document.getElementById('btn-force-connect').addEventListener('click', () => {
 
         // Jalankan aplikasi
         initApp();
-
+window.addEventListener('beforeunload', () => {
+    hangUp();
+});
     </script>
 </body>
 </html>
