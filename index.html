@@ -420,9 +420,16 @@
         }
 
         async function createRoom() {
-            if (!auth.currentUser) return;
-            const hasMedia = await openUserMedia();
-            if (!hasMedia) return;
+          if (!auth.currentUser) return;
+            
+            // Aktifkan sistem suara saat jari menyentuh tombol
+            initAudioContext();
+
+            // Cegah pemanggilan ulang jika kamera sudah menyala
+            if (!localStream) {
+                const hasMedia = await openUserMedia();
+                if (!hasMedia) return;
+            }
 
             updateLCD("CREATING", "...", "⧖");
             isCaller = true;
@@ -496,11 +503,17 @@
         }
 
         async function joinRoom(shortId) {
-            if (!auth.currentUser) return;
+           if (!auth.currentUser) return;
             if (!shortId) return;
+            
+            // Aktifkan sistem suara saat jari menyentuh tombol
+            initAudioContext();
 
-            const hasMedia = await openUserMedia();
-            if (!hasMedia) return;
+            // Cegah pemanggilan ulang jika kamera sudah menyala
+            if (!localStream) {
+                const hasMedia = await openUserMedia();
+                if (!hasMedia) return;
+            }
 
             updateLCD("JOINING", shortId, "⧖");
             isCaller = false;
