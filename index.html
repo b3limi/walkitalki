@@ -304,7 +304,6 @@
         let isRemoteVideoEnabled = false;
         let contactsSubscription = null;
 
-        // KONEKSI STUN & TURN SERVER (MENEMBUS FIREWALL / SELULER)
         const configuration = {
             iceServers: [
                 { urls: 'stun:stun1.l.google.com:19302' },
@@ -442,11 +441,31 @@
             loadContacts();
         });
 
+        // CEK AUTH / AUTO LOGIN
         async function checkAuth() {
             const storedCode = localStorage.getItem('walkie_emp_code');
             const storedName = localStorage.getItem('walkie_emp_name');
 
             if (storedCode && storedName) {
+                // Verifikasi status di Supabase terlebih dahulu
+                const { data, error } = await supabase
+                    .from('employees')
+                    .select('is_online')
+                    .eq('code', storedCode)
+                    .single();
+
+                // Hanya izinkan auto-login jika statusnya 'offline'
+                if (error || !data || data.is_online !== 'offline') {
+                    alert("Sesi telah habis atau akun sedang ONLINE/SIBUK di perangkat lain!");
+                    localStorage.removeItem('walkie_emp_code');
+                    localStorage.removeItem('walkie_emp_name');
+                    ui.powerLed.classList.add('bg-red-900');
+                    updateLCD("LOGIN", "...", "●");
+                    ui.loginPanel.classList.remove('hidden');
+                    ui.setupPanel.classList.add('hidden');
+                    return;
+                }
+
                 myId = storedCode;
                 myName = storedName;
                 ui.myIdDisplay.innerText = myId;
@@ -463,6 +482,7 @@
             }
         }
 
+        // PROSES LOGIN MANUAL (SYARAT: IS_ONLINE HARUS 'offline')
         ui.btnLogin.addEventListener('click', async () => {
             const code = ui.loginCodeInput.value.trim().toUpperCase();
             if(!code) return;
@@ -481,12 +501,11 @@
                 return;
             }
 
-            if(data.is_online !== 'offline') {
-                const override = confirm("Akun ini terdeteksi aktif di perangkat lain. Paksa masuk?");
-                if(!override) {
-                    ui.btnLogin.innerText = "MASUK";
-                    return;
-                }
+            // KETENTUAN: Hanya bisa login jika is_online terisi 'offline'
+            if (data.is_online !== 'offline') {
+                alert("Gagal masuk! Kode ini sedang ONLINE atau SIBUK di perangkat lain.");
+                ui.btnLogin.innerText = "MASUK";
+                return;
             }
 
             await supabase.from('employees').update({ is_online: 'online' }).eq('code', code);
@@ -592,6 +611,11 @@
             if (isMyOwnRoom) showSetupPanel();
             else showCallPanel(roomId);
 
+            // JIKA MELAKUKAN PANGGILAN KELUAR -> UBAH STATUS MEJADI 'busy'
+            if (!isMyOwnRoom && myId) {
+                await supabase.from('employees').update({ is_online: 'busy' }).eq('code', myId);
+            }
+
             const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
             
             try {
@@ -665,6 +689,11 @@
                     const roomData = snapshot.data();
                     if (roomData.offer && !peerConnection.currentRemoteDescription) {
                         try {
+                            // JIKA MENERIMA PANGGILAN MASUK -> UBAH STATUS MEJADI 'busy'
+                            if (myId) {
+                                supabase.from('employees').update({ is_online: 'busy' }).eq('code', myId);
+                            }
+
                             await peerConnection.setRemoteDescription(new RTCSessionDescription(roomData.offer));
                             const answer = await peerConnection.createAnswer();
                             await peerConnection.setLocalDescription(answer);
@@ -692,6 +721,12 @@
 
                 if (roomSnap.exists() && roomSnap.data().offer && !peerConnection.currentRemoteDescription) {
                     const roomData = roomSnap.data();
+                    
+                    // MENERIMA PANGGILAN MASUK (OFFER TERSEDIA)
+                    if (myId) {
+                        supabase.from('employees').update({ is_online: 'busy' }).eq('code', myId);
+                    }
+
                     await peerConnection.setRemoteDescription(new RTCSessionDescription(roomData.offer));
                     const answer = await peerConnection.createAnswer();
                     await peerConnection.setLocalDescription(answer);
@@ -718,7 +753,6 @@
                     remoteStream.addTrack(event.track);
                 }
                 
-                // Paksa pemutaran media pada peramban HP
                 ui.remoteVideo.play().catch(() => {});
             });
 
@@ -730,6 +764,7 @@
                     updateLCD("CONNECTED", roomId, "✔");
                     showCallPanel(roomId);
                     
+                    // KEDUA BELAH PIHAK DIPASTIKAN BERSTATUS 'busy'
                     if (myId) {
                         supabase.from('employees').update({ is_online: 'busy' }).eq('code', myId);
                     }
@@ -771,6 +806,7 @@
                 peerConnection = null;
             }
             
+            // SAAT PANGGILAN SELESAI -> KEMBALIKAN STATUS KE 'online'
             if (myId) {
                 supabase.from('employees').update({ is_online: 'online' }).eq('code', myId);
             }
@@ -806,8 +842,22 @@
             isCaller = false;
         }
 
+        // MEMULAI PANGGILAN (PROTEKSI STATUS TARGET)
         async function initiateCall(targetCode) {
             if (targetCode === myId) return;
+
+            // Periksa status target terlebih dahulu
+            const { data, error } = await supabase
+                .from('employees')
+                .select('is_online')
+                .eq('code', targetCode)
+                .single();
+
+            if (error || !data || data.is_online !== 'online') {
+                alert("Pegawai ini sedang SIBUK dalam panggilan lain atau OFFLINE!");
+                return;
+            }
+
             await cleanupConnection(); 
             connectToRoom(targetCode);     
         }
