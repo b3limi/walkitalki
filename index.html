@@ -157,7 +157,6 @@
             touch-action: manipulation;
         }
 
-        /* Custom Scrollbar for Contact List */
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
@@ -210,7 +209,6 @@
 
             <!-- Setup Panel (Standby / Contact List Mode) -->
             <div id="setup-panel" class="space-y-4 mb-6 hidden">
-                <!-- Pesan Izin -->
                 <div id="permission-msg" class="text-center">
                     <p class="text-gray-400 font-mono text-xs mb-4">Mempersiapkan Mikrofon...</p>
                     <button id="btn-force-connect" class="hidden w-full bg-green-800 hover:bg-green-700 active:bg-green-600 text-white font-bold py-3 px-4 rounded-lg shadow border border-green-900 transition-colors">
@@ -218,7 +216,6 @@
                     </button>
                 </div>
                 
-                <!-- Dial Panel / Contact List -->
                 <div id="dial-panel" class="hidden flex-col">
                     <div class="flex justify-between items-center bg-gray-900 p-2 rounded-lg border border-gray-700 shadow-[inset_0_2px_5px_rgba(0,0,0,0.5)] mb-3">
                         <div>
@@ -231,7 +228,6 @@
                         </div>
                     </div>
                     
-                    <!-- DAFTAR KONTAK -->
                     <div class="flex flex-col bg-[#0a0a0a] rounded-lg border border-gray-700 shadow-[inset_0_2px_5px_rgba(0,0,0,0.8)] p-2">
                         <div class="flex justify-between items-center border-b border-gray-800 pb-2 mb-2">
                             <span class="text-[10px] text-gray-500 font-bold">PILIH KONTAK:</span>
@@ -253,7 +249,6 @@
 
             <!-- Active Call Controls -->
             <div id="call-panel" class="hidden mb-6 flex flex-col items-center">
-                <!-- Tombol Hangup -->
                 <button id="btn-hangup" class="mb-4 text-xs bg-red-900 text-gray-300 py-2 px-6 rounded shadow border border-red-800 hover:text-white hover:bg-red-800 active:bg-red-700 transition-colors flex items-center justify-center space-x-2 w-full max-w-[200px]">
                     <span class="text-base">✖</span>
                     <span class="font-bold tracking-wider">TUTUP PANGGILAN</span>
@@ -264,7 +259,6 @@
                         <span id="video-icon">🚫</span>
                         <span id="video-btn-text">Kamera: OFF</span>
                     </button>
-                    <!-- Tombol Mute Mic -->
                     <button id="btn-toggle-mic" class="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 py-1.5 px-3 rounded shadow border border-gray-700 flex items-center space-x-1 transition-colors active:bg-gray-700">
                         <span id="mic-icon">🎙️</span>
                         <span id="mic-btn-text">Mic: ON</span>
@@ -273,7 +267,6 @@
                 
                 <p class="text-[10px] text-center text-green-400 mb-2 font-mono animate-pulse">BERBICARA BEBAS</p>
                 
-                <!-- Open Mic Status Display -->
                 <div class="w-28 h-28 rounded-full flex flex-col items-center justify-center border-4 border-[#111] bg-[#1a1a1a] shadow-[inset_0_4px_10px_rgba(0,0,0,0.6)] transition-colors">
                     <span id="mic-status-icon" class="text-green-500 font-bold text-2xl">MIC</span>
                     <span id="mic-status-text" class="text-green-500 text-xs tracking-widest mt-1 animate-pulse">LIVE</span>
@@ -289,12 +282,10 @@
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, updateDoc, deleteDoc, collection, onSnapshot, addDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // INIT SUPABASE
         const SUPABASE_URL = 'https://tigszfvmbpvznotykryx.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpZ3N6ZnZtYnB2em5vdHlrcnl4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3MzQwMjcsImV4cCI6MjA5OTMxMDAyN30.O0-y9FI_sikkPVig2XNDJ_zlTnfJZv-hRirPurs8yQc';
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // Global state variables
         let myId = null;     
         let myName = null;   
         let app, db, auth;
@@ -309,16 +300,27 @@
         let isVideoEnabled = false;
         let isMicEnabled = true;
         
-        // --- Variabel Baru ---
         let dataChannel = null;
         let isRemoteVideoEnabled = false;
-        let contactsSubscription = null; // Variabel penyimpan koneksi realtime
+        let contactsSubscription = null;
 
+        // KONEKSI STUN & TURN SERVER (MENEMBUS FIREWALL / SELULER)
         const configuration = {
             iceServers: [
                 { urls: 'stun:stun1.l.google.com:19302' },
-                { urls: 'stun:stun2.l.google.com:19302' }
-            ]
+                { urls: 'stun:stun2.l.google.com:19302' },
+                {
+                    urls: 'turn:openrelay.metered.ca:80',
+                    username: 'openrelayproject',
+                    credential: 'openrelayproject'
+                },
+                {
+                    urls: 'turn:openrelay.metered.ca:443',
+                    username: 'openrelayproject',
+                    credential: 'openrelayproject'
+                }
+            ],
+            iceCandidatePoolSize: 10
         };
 
         const ui = {
@@ -355,33 +357,25 @@
             employeeNameDisplay: document.getElementById('employee-name-display')
         };
 
-        // --- FUNGSI BERLANGGANAN PERUBAHAN STATUS REAL-TIME (BARU) ---
         function subscribeToEmployeeStatus() {
-            if (contactsSubscription) return; // Cegah duplikasi listener
-            
+            if (contactsSubscription) return;
             contactsSubscription = supabase
                 .channel('employee-status-changes')
-                .on(
-                    'postgres_changes',
-                    { event: 'UPDATE', schema: 'public', table: 'employees' },
-                    (payload) => {
-                        // Jalankan pembaruan list otomatis saat ada record yang di-update
-                        loadContacts();
-                    }
-                )
+                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'employees' }, () => {
+                    loadContacts();
+                })
                 .subscribe();
         }
 
-        // --- FUNGSI UPDATE LAYAR VIDEO BERSAMA ---
         function updateVideoModeUI() {
             if (isVideoEnabled || isRemoteVideoEnabled) {
                 ui.lcd.classList.add('video-mode');
+                ui.remoteVideo.play().catch(() => {});
             } else {
                 ui.lcd.classList.remove('video-mode');
             }
         }
 
-        // --- SETUP DATA CHANNEL UNTUK SINYAL UI KAMERA ---
         function setupDataChannel(channel) {
             channel.onmessage = (event) => {
                 try {
@@ -394,9 +388,7 @@
             };
         }
 
-        // FUNGSI MEMUAT DAFTAR KONTAK
         async function loadContacts() {
-            // Hindari teks berkedip jika memuat ulang dengan cepat
             const { data, error } = await supabase
                 .from('employees')
                 .select('code, name, is_online')
@@ -450,7 +442,6 @@
             loadContacts();
         });
 
-        // CEK LOGIN 
         async function checkAuth() {
             const storedCode = localStorage.getItem('walkie_emp_code');
             const storedName = localStorage.getItem('walkie_emp_name');
@@ -472,7 +463,6 @@
             }
         }
 
-        // PROSES LOGIN
         ui.btnLogin.addEventListener('click', async () => {
             const code = ui.loginCodeInput.value.trim().toUpperCase();
             if(!code) return;
@@ -506,18 +496,14 @@
             checkAuth();
         });
 
-        // PROSES LOGOUT
         async function performLogout() {
-            // Hentikan listener realtime
             if (contactsSubscription) {
                 supabase.removeChannel(contactsSubscription);
                 contactsSubscription = null;
             }
-            
             if (myId) {
                 await supabase.from('employees').update({ is_online: 'offline' }).eq('code', myId);
             }
-            
             await cleanupConnection();
             localStorage.removeItem('walkie_emp_code');
             localStorage.removeItem('walkie_emp_name');
@@ -525,7 +511,6 @@
         }
         ui.btnLogout.addEventListener('click', performLogout);
 
-        // INISIALISASI FIREBASE
         async function initFirebaseApp() {
             try {
                 const myFirebaseConfig = {
@@ -559,7 +544,6 @@
             if (audioContext.state === 'suspended') audioContext.resume();
         }
 
-        // INIT MEDIA
         async function openUserMedia() {
             try {
                 const constraints = {
@@ -567,7 +551,6 @@
                     audio: { echoCancellation: true, noiseSuppression: true }
                 };
                 localStream = await navigator.mediaDevices.getUserMedia(constraints);
-                
                 localStream.getAudioTracks().forEach(track => { track.enabled = false; });
                 return true;
             } catch (error) {
@@ -594,10 +577,7 @@
             ui.dialPanel.classList.remove('hidden');
             
             await loadContacts();
-            
-            // Nyalakan koneksi realtime untuk menyegarkan daftar secara otomatis
             subscribeToEmployeeStatus(); 
-            
             connectToRoom(myId); 
         }
 
@@ -662,7 +642,7 @@
                         const unsubCallee = onSnapshot(calleeCandidatesCollection, snapshot => {
                             if (!peerConnection) return;
                             snapshot.docChanges().forEach(async change => {
-                                if (change.type === 'added' && peerConnection.remoteDescription) {
+                                if (change.type === 'added' && peerConnection.remoteDescription && peerConnection.remoteDescription.type) {
                                     try { await peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data())); } catch(e) {}
                                 }
                             });
@@ -698,7 +678,7 @@
                 const unsubCaller = onSnapshot(callerCandidatesCollection, snapshot => {
                     if (!peerConnection) return;
                     snapshot.docChanges().forEach(async change => {
-                        if (change.type === 'added' && peerConnection.remoteDescription) {
+                        if (change.type === 'added' && peerConnection.remoteDescription && peerConnection.remoteDescription.type) {
                             try { await peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data())); } catch(e) {}
                         }
                     });
@@ -737,6 +717,9 @@
                 if (!remoteStream.getTracks().find(t => t.id === event.track.id)) {
                     remoteStream.addTrack(event.track);
                 }
+                
+                // Paksa pemutaran media pada peramban HP
+                ui.remoteVideo.play().catch(() => {});
             });
 
             peerConnection.addEventListener('connectionstatechange', () => {
@@ -838,7 +821,6 @@
             startDevice();
         });
 
-        // --- TOGGLE MIC ---
         ui.btnToggleMic.addEventListener('click', () => {
             if (!localStream) return;
             const audioTrack = localStream.getAudioTracks()[0];
@@ -862,7 +844,6 @@
             }
         });
 
-        // --- MONITOR AUDIO ---
         function setupAudioLevelMonitor() {
             if (!audioContext) return;
             
@@ -909,7 +890,6 @@
             }
         }
 
-        // --- TOGGLE KAMERA ---
         ui.btnToggleVideo.addEventListener('click', async () => {
             if (!localStream) return;
             
@@ -933,7 +913,7 @@
                 
                 if (peerConnection) {
                     const transceivers = peerConnection.getTransceivers();
-                    const videoTransceiver = transceivers.find(t => t.receiver && t.receiver.track && t.receiver.track.kind === 'video');
+                    const videoTransceiver = transceivers.find(t => t.sender && t.sender.track && t.sender.track.kind === 'video');
                     if (videoTransceiver) videoTransceiver.sender.replaceTrack(null);
                 }
             } else {
@@ -945,9 +925,12 @@
                     
                     if (peerConnection) {
                         const transceivers = peerConnection.getTransceivers();
-                        const videoTransceiver = transceivers.find(t => t.receiver && t.receiver.track && t.receiver.track.kind === 'video');
+                        let videoTransceiver = transceivers.find(t => t.receiver && t.receiver.track && t.receiver.track.kind === 'video');
+                        if (!videoTransceiver) {
+                            videoTransceiver = transceivers.find(t => t.sender && t.sender.track === null);
+                        }
                         if (videoTransceiver) {
-                            videoTransceiver.sender.replaceTrack(newVideoTrack);
+                            await videoTransceiver.sender.replaceTrack(newVideoTrack);
                         }
                     }
                     
@@ -968,7 +951,6 @@
             }
         });
 
-        // --- UI TOGGLES ---
         function updateLCD(status, roomStr, icon) {
             ui.lcdStatus.innerText = status;
             ui.lcdRoomText.innerText = roomStr || "---";
@@ -990,10 +972,8 @@
             if(myId) loadContacts();
         }
 
-        // Mulai aplikasi
         checkAuth();
         
-        // --- EVENT LISTENER KONEKSI TERPUTUS / TERTUTUP ---
         window.addEventListener('beforeunload', () => {
             if (contactsSubscription) supabase.removeChannel(contactsSubscription);
             if (myId) supabase.from('employees').update({ is_online: 'offline' }).eq('code', myId).then();
