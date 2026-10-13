@@ -489,24 +489,26 @@ autoConnect();
     }
 }
 
-        function setupWebRTCListeners() {
-            peerConnection.addEventListener('track', event => {
-                if (!remoteStream) {
-                    remoteStream = new MediaStream();
-                    ui.remoteVideo.srcObject = remoteStream;
-                }
-                remoteStream.addTrack(event.track);
-            });
-
-            peerConnection.addEventListener('connectionstatechange', () => {
-                if (peerConnection.connectionState === 'disconnected' || peerConnection.connectionState === 'failed') {
-                    alert("Koneksi terputus dengan perangkat lawan.");
-                    hangUp();
-                } else if (peerConnection.connectionState === 'connected') {
-                    setupAudioLevelMonitor();
-                }
-            });
+       function setupWebRTCListeners() {
+    peerConnection.addEventListener('track', event => {
+        if (!remoteStream) {
+            remoteStream = new MediaStream();
+            ui.remoteVideo.srcObject = remoteStream;
         }
+        remoteStream.addTrack(event.track);
+    });
+
+    peerConnection.addEventListener('connectionstatechange', () => {
+        if (peerConnection.connectionState === 'disconnected' || peerConnection.connectionState === 'failed') {
+            alert("Koneksi terputus dengan perangkat lawan.");
+            hangUp();
+        } else if (peerConnection.connectionState === 'connected') {
+            setupAudioLevelMonitor();
+            // Pindahkan indikator connected ke sini agar lebih akurat
+            updateLCD("CONNECTED", "CH-1", "✔");
+        }
+    });
+}
 
         let isTransmitting = false;
 
