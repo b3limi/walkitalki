@@ -264,14 +264,19 @@
                         <span id="video-icon">🚫</span>
                         <span id="video-btn-text">Kamera: OFF</span>
                     </button>
+                    <!-- Tombol Mute Mic -->
+                    <button id="btn-toggle-mic" class="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 py-1.5 px-3 rounded shadow border border-gray-700 flex items-center space-x-1 transition-colors active:bg-gray-700">
+                        <span id="mic-icon">🎙️</span>
+                        <span id="mic-btn-text">Mic: ON</span>
+                    </button>
                 </div>
                 
                 <p class="text-[10px] text-center text-green-400 mb-2 font-mono animate-pulse">BERBICARA BEBAS</p>
                 
                 <!-- Open Mic Status Display -->
-                <div class="w-28 h-28 rounded-full flex flex-col items-center justify-center border-4 border-[#111] bg-[#1a1a1a] shadow-[inset_0_4px_10px_rgba(0,0,0,0.6)]">
-                    <span class="text-green-500 font-bold text-2xl animate-pulse">MIC</span>
-                    <span class="text-green-500 text-xs tracking-widest mt-1">LIVE</span>
+                <div class="w-28 h-28 rounded-full flex flex-col items-center justify-center border-4 border-[#111] bg-[#1a1a1a] shadow-[inset_0_4px_10px_rgba(0,0,0,0.6)] transition-colors">
+                    <span id="mic-status-icon" class="text-green-500 font-bold text-2xl">MIC</span>
+                    <span id="mic-status-text" class="text-green-500 text-xs tracking-widest mt-1 animate-pulse">LIVE</span>
                 </div>
             </div>
 
@@ -302,6 +307,7 @@
         let unsubscribers = [];
         let audioContext = null;
         let isVideoEnabled = false;
+        let isMicEnabled = true;
 
         const configuration = {
             iceServers: [
@@ -332,6 +338,11 @@
             btnToggleVideo: document.getElementById('btn-toggle-video'),
             videoIcon: document.getElementById('video-icon'),
             videoBtnText: document.getElementById('video-btn-text'),
+            btnToggleMic: document.getElementById('btn-toggle-mic'),
+            micIcon: document.getElementById('mic-icon'),
+            micBtnText: document.getElementById('mic-btn-text'),
+            micStatusIcon: document.getElementById('mic-status-icon'),
+            micStatusText: document.getElementById('mic-status-text'),
             remoteVideo: document.getElementById('remote-video'),
             localVideo: document.getElementById('local-video'),
             powerLed: document.getElementById('power-led'),
@@ -346,7 +357,6 @@
             const { data, error } = await supabase
                 .from('employees')
                 .select('code, name, is_online')
-                .order('is_online', { ascending: false })
                 .order('name', { ascending: true });
 
             if (error) {
@@ -366,8 +376,17 @@
                 const li = document.createElement('li');
                 li.className = 'bg-[#1a1a1a] p-2 rounded border border-gray-700 flex justify-between items-center cursor-pointer hover:border-green-500 hover:bg-[#222] transition-colors';
                 
-                const dotColor = emp.is_online ? 'text-green-500' : 'text-gray-600';
-                const statusText = emp.is_online ? 'ON' : 'OFF';
+                // Pengecekan status berdasarkan teks pada kolom is_online
+                let statusText = 'OFF';
+                let dotColor = 'text-gray-600';
+
+                if (emp.is_online === 'busy') {
+                    statusText = 'PANGGILAN';
+                    dotColor = 'text-red-500';
+                } else if (emp.is_online === 'online') {
+                    statusText = 'STANDBY';
+                    dotColor = 'text-green-500';
+                }
 
                 li.innerHTML = `
                     <div class="flex flex-col">
@@ -425,7 +444,7 @@
                 return;
             }
 
-            if(data.is_online) {
+            if(data.is_online !== 'offline') {
                 const override = confirm("Akun ini terdeteksi aktif di perangkat lain. Paksa masuk?");
                 if(!override) {
                     ui.btnLogin.innerText = "MASUK";
@@ -433,7 +452,8 @@
                 }
             }
 
-            await supabase.from('employees').update({ is_online: true }).eq('code', code);
+            // Setel is_online ke 'online' saat berhasil login
+            await supabase.from('employees').update({ is_online: 'online' }).eq('code', code);
             localStorage.setItem('walkie_emp_code', data.code);
             localStorage.setItem('walkie_emp_name', data.name);
             ui.loginCodeInput.value = "";
@@ -443,7 +463,8 @@
         // PROSES LOGOUT
         async function performLogout() {
             if (myId) {
-                await supabase.from('employees').update({ is_online: false }).eq('code', myId);
+                // Setel is_online ke 'offline' saat logout
+                await supabase.from('employees').update({ is_online: 'offline' }).eq('code', myId);
             }
             await cleanupConnection();
             localStorage.removeItem('walkie_emp_code');
@@ -490,7 +511,6 @@
         // INIT MEDIA (HANYA MIKROFON SAAT DIBUKA)
         async function openUserMedia() {
             try {
-                // Kamera dimatikan di awal, hanya minta mic
                 const constraints = {
                     video: false, 
                     audio: { echoCancellation: true, noiseSuppression: true }
@@ -651,7 +671,6 @@
                 }
                 remoteStream.addTrack(event.track);
                 
-                // Jika track yang diterima adalah video, nyalakan layar hitam (Video Mode)
                 if(event.track.kind === 'video') {
                     ui.lcd.classList.add('video-mode');
                 }
@@ -665,9 +684,22 @@
                     updateLCD("CONNECTED", roomId, "✔");
                     showCallPanel(roomId);
                     
-                    // OTOMATIS OPEN MIC SAAT TERHUBUNG (TANPA PTT)
+                    // Ubah status is_online menjadi 'busy' saat panggilan tersambung
+                    if (myId) {
+                        supabase.from('employees').update({ is_online: 'busy' }).eq('code', myId);
+                    }
+                    
+                    // OTOMATIS OPEN MIC SAAT TERHUBUNG
                     if (localStream) {
                         localStream.getAudioTracks().forEach(track => { track.enabled = true; });
+                        
+                        // Setel ulang UI mic ke ON
+                        isMicEnabled = true;
+                        ui.micIcon.innerText = "🎙️";
+                        ui.micBtnText.innerText = "Mic: ON";
+                        ui.micStatusText.innerText = "LIVE";
+                        ui.micStatusIcon.className = "text-green-500 font-bold text-2xl";
+                        ui.micStatusText.className = "text-green-500 text-xs tracking-widest mt-1 animate-pulse";
                     }
                 }
             });
@@ -690,7 +722,12 @@
                 peerConnection = null;
             }
             
-            // Hentikan Video Track saat Hangup dan hapus dari stream
+            // Kembalikan status is_online menjadi 'online' saat panggilan ditutup
+            if (myId) {
+                supabase.from('employees').update({ is_online: 'online' }).eq('code', myId);
+            }
+
+            // Hentikan Video Track saat Hangup
             if (localStream) {
                 const videoTracks = localStream.getVideoTracks();
                 videoTracks.forEach(track => {
@@ -739,11 +776,34 @@
             startDevice();
         });
 
-        // --- MONITOR AUDIO (Indikator Suara) ---
+        // --- TOGGLE MIC ---
+        ui.btnToggleMic.addEventListener('click', () => {
+            if (!localStream) return;
+            const audioTrack = localStream.getAudioTracks()[0];
+            if (audioTrack) {
+                isMicEnabled = !isMicEnabled;
+                audioTrack.enabled = isMicEnabled;
+                
+                if (isMicEnabled) {
+                    ui.micIcon.innerText = "🎙️";
+                    ui.micBtnText.innerText = "Mic: ON";
+                    ui.micStatusText.innerText = "LIVE";
+                    ui.micStatusIcon.className = "text-green-500 font-bold text-2xl";
+                    ui.micStatusText.className = "text-green-500 text-xs tracking-widest mt-1 animate-pulse";
+                } else {
+                    ui.micIcon.innerText = "🔇";
+                    ui.micBtnText.innerText = "Mic: MUTED";
+                    ui.micStatusText.innerText = "MUTED";
+                    ui.micStatusIcon.className = "text-red-500 font-bold text-2xl";
+                    ui.micStatusText.className = "text-red-500 text-xs tracking-widest mt-1";
+                }
+            }
+        });
+
+        // --- MONITOR AUDIO ---
         function setupAudioLevelMonitor() {
             if (!audioContext) return;
             
-            // Monitor Suara Lawan (RX)
             if (remoteStream) {
                 const rxSource = audioContext.createMediaStreamSource(remoteStream);
                 const rxAnalyzer = audioContext.createAnalyser();
@@ -765,7 +825,6 @@
                 checkRxLevel();
             }
 
-            // Monitor Suara Sendiri (TX)
             if (localStream) {
                 const txSource = audioContext.createMediaStreamSource(localStream);
                 const txAnalyzer = audioContext.createAnalyser();
@@ -793,7 +852,6 @@
             if (!localStream) return;
             
             if (isVideoEnabled) {
-                // MATIKAN KAMERA
                 const videoTrack = localStream.getVideoTracks()[0];
                 if (videoTrack) {
                     videoTrack.stop(); 
@@ -805,7 +863,6 @@
                 ui.localVideo.classList.remove('opacity-100');
                 ui.localVideo.classList.add('opacity-0');
             } else {
-                // NYALAKAN KAMERA
                 try {
                     const newStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
                     const newVideoTrack = newStream.getVideoTracks()[0];
@@ -855,7 +912,7 @@
         checkAuth();
         
         window.addEventListener('beforeunload', () => {
-            if (myId) supabase.from('employees').update({ is_online: false }).eq('code', myId).then();
+            if (myId) supabase.from('employees').update({ is_online: 'offline' }).eq('code', myId).then();
             cleanupConnection();
             if (localStream) localStream.getTracks().forEach(track => track.stop());
         });
