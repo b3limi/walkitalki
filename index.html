@@ -341,10 +341,13 @@
                 
                 userId = auth.currentUser.uid;
                 
-                updateLCD("READY", "---", "●");
+               updateLCD("READY", "---", "●");
                 ui.powerLed.classList.remove('bg-red-900');
                 ui.powerLed.classList.add('bg-green-500', 'shadow-[0_0_8px_#4ade80]');
                 ui.lcd.classList.add('active');
+                
+                // Meminta izin kamera dan mikrofon secara otomatis saat web dibuka
+                await openUserMedia();
 
             } catch (error) {
                 console.error("Firebase init error:", error);
