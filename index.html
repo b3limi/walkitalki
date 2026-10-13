@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>WebRTC Walkie Talkie</title>
+    <title>WebRTC Walkie Talkie Mobile</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
@@ -17,7 +17,8 @@
             min-height: 100vh;
             margin: 0;
             font-family: 'Inter', sans-serif;
-            touch-action: manipulation; /* Prevent zoom on double tap */
+            touch-action: pan-y; /* Optimal untuk mobile: cegah zoom layar tapi izinkan scroll */
+            -webkit-tap-highlight-color: transparent;
         }
 
         .walkie-body {
@@ -124,7 +125,7 @@
             text-shadow: 1px 1px 3px rgba(0,0,0,0.9), 0 0 8px rgba(0,0,0,0.8);
         }
         .lcd-screen.video-mode #rx-indicator {
-            color: #4ade80; /* Hijau terang agar terlihat di atas video */
+            color: #4ade80; 
         }
 
         .ptt-button {
@@ -136,6 +137,7 @@
             transition: all 0.1s ease;
             user-select: none;
             -webkit-user-select: none;
+            cursor: pointer;
         }
 
         .ptt-button:active, .ptt-button.pressed {
@@ -152,7 +154,6 @@
             opacity: 0.8;
         }
 
-        /* Pulse animation for transmitting status */
         @keyframes pulse-tx {
             0% { opacity: 1; }
             50% { opacity: 0.4; }
@@ -167,19 +168,21 @@
             color: #d32f2f;
             text-shadow: 0 0 5px red;
         }
+
+        /* Styling native button untuk HP */
+        button {
+            touch-action: manipulation;
+        }
     </style>
 </head>
 <body class="text-gray-200 antialiased">
 
     <!-- Main Walkie Talkie Device -->
     <div class="relative w-80 max-w-[95vw] mt-16 mb-8">
-        <!-- Physical parts -->
         <div class="antenna"></div>
         <div class="volume-knob"></div>
 
-        <!-- Body -->
         <div class="walkie-body p-6 border-4 border-[#1a2017]">
-            
             <!-- Brand / Top Area -->
             <div class="flex justify-between items-center mb-4 text-xs font-bold tracking-widest text-gray-500 uppercase">
                 <span>Comms-Pro</span>
@@ -188,11 +191,9 @@
 
             <!-- LCD / Video Screen -->
             <div id="lcd" class="lcd-screen rounded-lg h-44 mb-6 text-[#111] transition-all duration-300">
-                <!-- Elemen Video -->
                 <video id="remote-video" class="video-feed" autoplay playsinline></video>
                 <video id="local-video" class="pip-video" autoplay playsinline muted></video>
                 
-                <!-- Teks OSD (On Screen Display) -->
                 <div class="lcd-content p-3">
                     <div class="flex justify-between items-start">
                         <span class="text-sm font-bold tx-indicator">TX</span>
@@ -206,10 +207,10 @@
                 </div>
             </div>
 
-            <!-- Connection Controls (Hidden during call) -->
+            <!-- Connection Controls (Mode Siap) -->
             <div id="setup-panel" class="space-y-4 mb-6">
                 <div>
-                    <button id="btn-create" class="w-full bg-gray-800 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded-lg shadow-[inset_0_1px_0_rgba(255,255,255,0.1),_0_2px_4px_rgba(0,0,0,0.5)] border border-gray-900 transition-colors">
+                    <button id="btn-create" class="w-full bg-gray-800 hover:bg-gray-700 active:bg-gray-600 text-white font-bold py-3 px-4 rounded-lg shadow-[inset_0_1px_0_rgba(255,255,255,0.1),_0_2px_4px_rgba(0,0,0,0.5)] border border-gray-900 transition-colors">
                         Create New Room
                     </button>
                 </div>
@@ -222,21 +223,20 @@
 
                 <div class="flex space-x-2">
                     <input type="text" id="join-room-id" placeholder="Room ID" class="w-2/3 bg-gray-900 border border-gray-700 text-white text-center rounded-lg focus:outline-none focus:border-green-500 uppercase tracking-widest font-mono" autocomplete="off">
-                    <button id="btn-join" class="w-1/3 bg-gray-800 hover:bg-gray-700 text-white font-bold py-3 px-2 rounded-lg shadow-[inset_0_1px_0_rgba(255,255,255,0.1),_0_2px_4px_rgba(0,0,0,0.5)] border border-gray-900 transition-colors text-sm">
+                    <button id="btn-join" class="w-1/3 bg-gray-800 hover:bg-gray-700 active:bg-gray-600 text-white font-bold py-3 px-2 rounded-lg shadow-[inset_0_1px_0_rgba(255,255,255,0.1),_0_2px_4px_rgba(0,0,0,0.5)] border border-gray-900 transition-colors text-sm">
                         Join
                     </button>
                 </div>
             </div>
 
-            <!-- Active Call Controls (Hidden initially) -->
+            <!-- Active Call Controls -->
             <div id="call-panel" class="hidden mb-6 flex flex-col items-center">
-                <button id="btn-copy" class="mb-4 text-xs bg-gray-800 text-gray-300 py-1 px-3 rounded shadow border border-gray-700 hover:text-white">
+                <button id="btn-copy" class="mb-4 text-xs bg-gray-800 text-gray-300 py-1 px-3 rounded shadow border border-gray-700 hover:text-white active:bg-gray-700">
                     Copy Room ID
                 </button>
                 
-                <!-- Tombol Kontrol Video (benar-benar mematikan perangkat keras kamera) -->
                 <div class="flex space-x-2 mb-3">
-                    <button id="btn-toggle-video" class="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 py-1.5 px-3 rounded shadow border border-gray-700 flex items-center space-x-1 transition-colors">
+                    <button id="btn-toggle-video" class="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 py-1.5 px-3 rounded shadow border border-gray-700 flex items-center space-x-1 transition-colors active:bg-gray-700">
                         <span id="video-icon">📷</span>
                         <span id="video-btn-text">Kamera: ON</span>
                     </button>
@@ -244,39 +244,36 @@
                 
                 <p class="text-xs text-center text-gray-400 mb-2 font-mono">HOLD TO SPEAK</p>
                 
-                <!-- Large Push to Talk Button -->
+                <!-- Tombol PTT menggunakan Event Pointer Khusus Layar Sentuh -->
                 <button id="btn-ptt" class="ptt-button w-32 h-32 rounded-full flex items-center justify-center border-4 border-[#111]">
                     <span class="text-white font-bold text-xl tracking-wider text-shadow-sm">PTT</span>
                 </button>
                 
-                <button id="btn-hangup" class="mt-8 text-xs text-red-500 hover:text-red-400 uppercase tracking-widest font-bold">
+                <button id="btn-hangup" class="mt-8 text-xs text-red-500 hover:text-red-400 active:text-red-300 uppercase tracking-widest font-bold p-2">
                     Disconnect
                 </button>
             </div>
 
-            <!-- Speaker Grille -->
             <div class="h-24 w-full speaker-grille rounded-lg border border-gray-900 shadow-[inset_0_2px_10px_rgba(0,0,0,0.8)]"></div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, updateDoc, deleteDoc, collection, onSnapshot, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, updateDoc, deleteDoc, collection, onSnapshot, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Global state variables
         let app, db, auth;
-        let appId, userId;
+        let appId = 'walkie-talkie-public-rooms'; // Fixed ID karena di luar Gemini
         let peerConnection = null;
         let localStream = null;
         let remoteStream = null;
         let roomId = null;
         let isCaller = false;
         let unsubscribers = [];
-        
         let audioContext = null;
         
-        // STUN servers for WebRTC
         const configuration = {
             iceServers: [
                 { urls: 'stun:stun1.l.google.com:19302' },
@@ -284,11 +281,9 @@
             ]
         };
 
-        // UI Elements
         const ui = {
             lcd: document.getElementById('lcd'),
             lcdStatus: document.getElementById('lcd-status'),
-            lcdRoom: document.getElementById('lcdRoom'),
             lcdRoomText: document.getElementById('lcd-room'),
             statusIcon: document.getElementById('status-icon'),
             rxIndicator: document.getElementById('rx-indicator'),
@@ -310,47 +305,33 @@
 
         async function initApp() {
             try {
-                // --- KONFIGURASI FIREBASE MILIK ANDA ---
-                // Ganti nilai-nilai di bawah ini dengan config dari Firebase Console Anda!
+                // Konfigurasi Firebase Anda
                 const myFirebaseConfig = {
-                   apiKey: "AIzaSyB8Z9x6ovw6AW-bvCJr02Gdzb1-WKMPefw",
-  authDomain: "walkitalki-6985b.firebaseapp.com",
-  projectId: "walkitalki-6985b",
-  storageBucket: "walkitalki-6985b.firebasestorage.app",
-  messagingSenderId: "503583235135",
-  appId: "1:503583235135:web:7fa355d440ce17cf402c8a"
+                    apiKey: "AIzaSyB8Z9x6ovw6AW-bvCJr02Gdzb1-WKMPefw",
+                    authDomain: "walkitalki-6985b.firebaseapp.com",
+                    projectId: "walkitalki-6985b",
+                    storageBucket: "walkitalki-6985b.firebasestorage.app",
+                    messagingSenderId: "503583235135",
+                    appId: "1:503583235135:web:7fa355d440ce17cf402c8a"
                 };
-
-                // Logika Cerdas: Gunakan config internal jika di Gemini, gunakan config Anda jika di luar (GitHub Pages/Lokal)
-                const isGeminiEnv = typeof __firebase_config !== 'undefined';
-                const firebaseConfig = isGeminiEnv ? JSON.parse(__firebase_config) : myFirebaseConfig;
                 
-                // Gunakan ID statis untuk database eksternal agar lintas-perangkat bisa mencari di folder yang sama
-                appId = isGeminiEnv ? __app_id : 'walkie-talkie-public-rooms';
-                
-                app = initializeApp(firebaseConfig);
+                app = initializeApp(myFirebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
 
-                // Authenticate
-                if (isGeminiEnv && typeof __initial_auth_token !== 'undefined') {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth); // Akan menggunakan Authentication dari Firebase Anda
-                }
+                await signInAnonymously(auth); 
                 
-                userId = auth.currentUser.uid;
-                
-               updateLCD("READY", "---", "●");
+                updateLCD("READY", "---", "●");
                 ui.powerLed.classList.remove('bg-red-900');
                 ui.powerLed.classList.add('bg-green-500', 'shadow-[0_0_8px_#4ade80]');
                 ui.lcd.classList.add('active');
-                
-                // Meminta izin kamera dan mikrofon secara otomatis saat web dibuka
-                await openUserMedia();
+
+                // PERBAIKAN: Jangan auto-request kamera saat dimuat. 
+                // Di handphone, ini memicu browser memblokir semua eksekusi karena dianggap tidak sah.
 
             } catch (error) {
                 console.error("Firebase init error:", error);
+                alert("Gagal terhubung ke Firebase: " + error.message);
                 updateLCD("ERR: AUTH", "---", "✖");
             }
         }
@@ -364,162 +345,142 @@
             }
         }
 
-        // Generates walkie-talkie squelch/beep sounds using oscillators
         function playSfx(type) {
             if (!audioContext) return;
-            
-            const osc = audioContext.createOscillator();
-            const gain = audioContext.createGain();
-            osc.connect(gain);
-            gain.connect(audioContext.destination);
+            try {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                const now = audioContext.currentTime;
 
-            const now = audioContext.currentTime;
-
-            if (type === 'tx-start') {
-                // Chirp up
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(800, now);
-                osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
-                gain.gain.setValueAtTime(0.1, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-                osc.start(now);
-                osc.stop(now + 0.1);
-            } else if (type === 'tx-end') {
-                // Roger beep
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(1200, now);
-                osc.frequency.setValueAtTime(1200, now + 0.1);
-                gain.gain.setValueAtTime(0.1, now);
-                gain.gain.setValueAtTime(0.1, now + 0.1);
-                osc.start(now);
-                osc.stop(now + 0.1);
-            }
+                if (type === 'tx-start') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(800, now);
+                    osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                    osc.start(now);
+                    osc.stop(now + 0.1);
+                } else if (type === 'tx-end') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(1200, now);
+                    osc.frequency.setValueAtTime(1200, now + 0.1);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.setValueAtTime(0.1, now + 0.1);
+                    osc.start(now);
+                    osc.stop(now + 0.1);
+                }
+            } catch(e) { console.error("Audio error", e); }
         }
 
         async function openUserMedia() {
-            initAudioContext(); // Ensure audio context is ready on user gesture
             try {
-                // Request video dan audio
-                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                
-                // Tampilkan kamera lokal di mode Picture-in-Picture & ubah layar ke mode Video
+                // Penyesuaian agar kamera support penuh di HP Android/iOS (meminta kamera depan)
+                const constraints = {
+                    video: { facingMode: "user" },
+                    audio: { echoCancellation: true, noiseSuppression: true }
+                };
+                localStream = await navigator.mediaDevices.getUserMedia(constraints);
                 ui.localVideo.srcObject = localStream;
                 ui.lcd.classList.add('video-mode');
                 
-                // Mute stream audio (mikrofon) lokal secara default. Hanya aktif saat PTT ditekan.
-                localStream.getAudioTracks().forEach(track => {
-                    track.enabled = false;
-                });
+                localStream.getAudioTracks().forEach(track => { track.enabled = false; });
                 return true;
             } catch (error) {
-                console.error("Error accessing media devices.", error);
+                console.error("Error media devices:", error);
+                alert("Gagal membuka Kamera/Mikrofon. Pastikan Anda memberi izin pada pop-up browser.\n\nDetail: " + error.message);
                 updateLCD("NO CAM/MIC", "---", "✖");
-                alert("Akses Kamera dan Mikrofon diperlukan untuk Video Walkie Talkie.");
                 return false;
             }
         }
 
-       async function createRoom() {
-            // Tambahkan alert ini untuk mengetes apakah tombol merespons sentuhan
-            alert("1. Tombol Create ditekan!");
-
+        async function createRoom() {
             if (!auth.currentUser) {
-                alert("2. Gagal: Koneksi Firebase terputus");
+                alert("Menunggu koneksi server, harap coba lagi dalam beberapa detik.");
                 return;
             }
-            
-            alert("3. Koneksi aman, memeriksa kamera...");
-            initAudioContext();
 
+            // Inisialisasi audio HARUS sinkron bersamaan dengan klik tombol
+            initAudioContext();
+            
             if (!localStream) {
+                updateLCD("MINTA IZIN", "...", "⧖");
                 const hasMedia = await openUserMedia();
-                if (!hasMedia) {
-                    alert("4. Gagal mengakses perangkat kamera");
-                    return;
-                }
+                if (!hasMedia) return;
             }
 
-            alert("5. Semua siap! Membuat ruangan...");
             updateLCD("CREATING", "...", "⧖");
             isCaller = true;
 
-            // Initialize Peer Connection
-            peerConnection = new RTCPeerConnection(configuration);
-            setupWebRTCListeners();
-            
-            // Add local tracks to peer connection
-            localStream.getTracks().forEach(track => {
-                peerConnection.addTrack(track, localStream);
-            });
+            try {
+                peerConnection = new RTCPeerConnection(configuration);
+                setupWebRTCListeners();
+                
+                localStream.getTracks().forEach(track => {
+                    peerConnection.addTrack(track, localStream);
+                });
 
-            // Firestore references
-            const roomRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'rooms'));
-            roomId = roomRef.id;
-            
-            // Just take first 5 chars for a simple room code (Walkie talkie style)
-            const shortRoomId = roomId.substring(0, 5).toUpperCase();
+                const roomRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'rooms'));
+                roomId = roomRef.id;
+                const shortRoomId = roomId.substring(0, 5).toUpperCase();
 
-            const callerCandidatesCollection = collection(roomRef, 'callerCandidates');
-
-            // Collect ICE candidates and save them to Firestore
-            peerConnection.addEventListener('icecandidate', event => {
-                if (event.candidate) {
-                    addDoc(callerCandidatesCollection, event.candidate.toJSON());
-                }
-            });
-
-            // Create Offer
-            const offer = await peerConnection.createOffer();
-            await peerConnection.setLocalDescription(offer);
-
-            const roomWithOffer = {
-                offer: {
-                    type: offer.type,
-                    sdp: offer.sdp
-                },
-                createdAt: new Date().toISOString() // for cleanup if necessary later
-            };
-            
-            await setDoc(roomRef, roomWithOffer);
-            
-            showCallPanel(shortRoomId);
-            updateLCD("WAITING", shortRoomId, "⧖");
-
-            // Listen for remote answer
-            const unsubRoom = onSnapshot(roomRef, async snapshot => {
-                if (!peerConnection) return; // Pencegahan jika koneksi sudah ditutup
-                const data = snapshot.data();
-                if (!peerConnection.currentRemoteDescription && data && data.answer) {
-                    const rtcSessionDescription = new RTCSessionDescription(data.answer);
-                    await peerConnection.setRemoteDescription(rtcSessionDescription);
-                    updateLCD("CONNECTED", shortRoomId, "✔");
-                }
-            }, (error) => console.error("Room snapshot error:", error));
-            unsubscribers.push(unsubRoom);
-
-            // Listen for remote ICE candidates
-            const calleeCandidatesCollection = collection(roomRef, 'calleeCandidates');
-            const unsubCallee = onSnapshot(calleeCandidatesCollection, snapshot => {
-                if (!peerConnection) return; // Pencegahan jika koneksi sudah ditutup
-                snapshot.docChanges().forEach(async change => {
-                    if (change.type === 'added') {
-                        let data = change.doc.data();
-                        await peerConnection.addIceCandidate(new RTCIceCandidate(data));
+                const callerCandidatesCollection = collection(roomRef, 'callerCandidates');
+                peerConnection.addEventListener('icecandidate', event => {
+                    if (event.candidate) {
+                        addDoc(callerCandidatesCollection, event.candidate.toJSON());
                     }
                 });
-            }, (error) => console.error("Callee ICE error:", error));
-            unsubscribers.push(unsubCallee);
+
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
+
+                await setDoc(roomRef, {
+                    offer: { type: offer.type, sdp: offer.sdp },
+                    createdAt: new Date().toISOString()
+                });
+                
+                showCallPanel(shortRoomId);
+                updateLCD("WAITING", shortRoomId, "⧖");
+
+                const unsubRoom = onSnapshot(roomRef, async snapshot => {
+                    if (!peerConnection) return; 
+                    const data = snapshot.data();
+                    if (!peerConnection.currentRemoteDescription && data && data.answer) {
+                        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+                        updateLCD("CONNECTED", shortRoomId, "✔");
+                    }
+                });
+                unsubscribers.push(unsubRoom);
+
+                const calleeCandidatesCollection = collection(roomRef, 'calleeCandidates');
+                const unsubCallee = onSnapshot(calleeCandidatesCollection, snapshot => {
+                    if (!peerConnection) return;
+                    snapshot.docChanges().forEach(async change => {
+                        if (change.type === 'added') {
+                            await peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data()));
+                        }
+                    });
+                });
+                unsubscribers.push(unsubCallee);
+
+            } catch (err) {
+                alert("Error Create Room: " + err.message);
+                hangUp();
+            }
         }
 
         async function joinRoom(shortId) {
-           if (!auth.currentUser) return;
-            if (!shortId) return;
-            
-            // Aktifkan sistem suara saat jari menyentuh tombol
+            if (!auth.currentUser) return;
+            if (!shortId) {
+                alert("Silakan masukkan Room ID terlebih dahulu.");
+                return;
+            }
+
             initAudioContext();
 
-            // Cegah pemanggilan ulang jika kamera sudah menyala
             if (!localStream) {
+                updateLCD("MINTA IZIN", "...", "⧖");
                 const hasMedia = await openUserMedia();
                 if (!hasMedia) return;
             }
@@ -527,99 +488,86 @@
             updateLCD("JOINING", shortId, "⧖");
             isCaller = false;
 
-            // Search for the room starting with the short ID
-            const roomsCol = collection(db, 'artifacts', appId, 'public', 'data', 'rooms');
-            const roomsSnapshot = await getDocs(roomsCol);
-            
-            let fullRoomId = null;
-            let roomData = null;
+            try {
+                const roomsCol = collection(db, 'artifacts', appId, 'public', 'data', 'rooms');
+                const roomsSnapshot = await getDocs(roomsCol);
+                
+                let fullRoomId = null;
+                let roomData = null;
 
-            roomsSnapshot.forEach(doc => {
-                if (doc.id.toUpperCase().startsWith(shortId.toUpperCase())) {
-                    fullRoomId = doc.id;
-                    roomData = doc.data();
-                }
-            });
-
-            if (!fullRoomId || !roomData || !roomData.offer) {
-                updateLCD("NOT FOUND", shortId, "✖");
-                setTimeout(() => {
-                    updateLCD("READY", "---", "●");
-                }, 2000);
-                return;
-            }
-
-            roomId = fullRoomId;
-            const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
-
-            peerConnection = new RTCPeerConnection(configuration);
-            setupWebRTCListeners();
-
-            // Add local tracks
-            localStream.getTracks().forEach(track => {
-                peerConnection.addTrack(track, localStream);
-            });
-
-            const calleeCandidatesCollection = collection(roomRef, 'calleeCandidates');
-            peerConnection.addEventListener('icecandidate', event => {
-                if (event.candidate) {
-                    addDoc(calleeCandidatesCollection, event.candidate.toJSON());
-                }
-            });
-
-            // Set remote description from offer
-            const offer = roomData.offer;
-            await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-
-            // Create and set answer
-            const answer = await peerConnection.createAnswer();
-            await peerConnection.setLocalDescription(answer);
-
-            const roomWithAnswer = {
-                answer: {
-                    type: answer.type,
-                    sdp: answer.sdp
-                }
-            };
-            await updateDoc(roomRef, roomWithAnswer);
-
-            showCallPanel(shortId);
-            updateLCD("CONNECTED", shortId, "✔");
-
-            // Listen for caller ICE candidates
-            const callerCandidatesCollection = collection(roomRef, 'callerCandidates');
-            const unsubCaller = onSnapshot(callerCandidatesCollection, snapshot => {
-                if (!peerConnection) return; // Pencegahan jika koneksi sudah ditutup
-                snapshot.docChanges().forEach(async change => {
-                    if (change.type === 'added') {
-                        let data = change.doc.data();
-                        await peerConnection.addIceCandidate(new RTCIceCandidate(data));
+                roomsSnapshot.forEach(doc => {
+                    if (doc.id.toUpperCase().startsWith(shortId.toUpperCase())) {
+                        fullRoomId = doc.id;
+                        roomData = doc.data();
                     }
                 });
-            }, (error) => console.error("Caller ICE error:", error));
-            unsubscribers.push(unsubCaller);
+
+                if (!fullRoomId || !roomData || !roomData.offer) {
+                    alert("Room ID tidak ditemukan!");
+                    updateLCD("NOT FOUND", shortId, "✖");
+                    setTimeout(() => updateLCD("READY", "---", "●"), 2000);
+                    return;
+                }
+
+                roomId = fullRoomId;
+                const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
+
+                peerConnection = new RTCPeerConnection(configuration);
+                setupWebRTCListeners();
+
+                localStream.getTracks().forEach(track => {
+                    peerConnection.addTrack(track, localStream);
+                });
+
+                const calleeCandidatesCollection = collection(roomRef, 'calleeCandidates');
+                peerConnection.addEventListener('icecandidate', event => {
+                    if (event.candidate) {
+                        addDoc(calleeCandidatesCollection, event.candidate.toJSON());
+                    }
+                });
+
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(roomData.offer));
+                const answer = await peerConnection.createAnswer();
+                await peerConnection.setLocalDescription(answer);
+
+                await updateDoc(roomRef, {
+                    answer: { type: answer.type, sdp: answer.sdp }
+                });
+
+                showCallPanel(shortId);
+                updateLCD("CONNECTED", shortId, "✔");
+
+                const callerCandidatesCollection = collection(roomRef, 'callerCandidates');
+                const unsubCaller = onSnapshot(callerCandidatesCollection, snapshot => {
+                    if (!peerConnection) return;
+                    snapshot.docChanges().forEach(async change => {
+                        if (change.type === 'added') {
+                            await peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data()));
+                        }
+                    });
+                });
+                unsubscribers.push(unsubCaller);
+
+            } catch(err) {
+                alert("Error Join Room: " + err.message);
+                hangUp();
+            }
         }
 
         function setupWebRTCListeners() {
             peerConnection.addEventListener('track', event => {
-                // When we receive a remote stream (audio atau video)
                 if (!remoteStream) {
                     remoteStream = new MediaStream();
                     ui.remoteVideo.srcObject = remoteStream;
                 }
                 remoteStream.addTrack(event.track);
-
-                // Setup listener to show RX indicator when audio is playing
-                // WebRTC audio doesn't have a simple "is talking" event out of the box without Web Audio API,
-                // but we can monitor connection state.
             });
 
             peerConnection.addEventListener('connectionstatechange', () => {
-                console.log("Connection state:", peerConnection.connectionState);
                 if (peerConnection.connectionState === 'disconnected' || peerConnection.connectionState === 'failed') {
+                    alert("Koneksi terputus dengan perangkat lawan.");
                     hangUp();
                 } else if (peerConnection.connectionState === 'connected') {
-                    // Start an audio context analyzer to detect remote audio level for RX indicator
                     setupAudioLevelMonitor();
                 }
             });
@@ -628,10 +576,7 @@
         let isTransmitting = false;
 
         function startPTT(e) {
-            if (e) {
-                e.preventDefault(); // Prevent duplicate touch/mouse events
-                e.stopPropagation();
-            }
+            e.preventDefault(); 
             if (!peerConnection || peerConnection.connectionState !== 'connected' || isTransmitting) return;
             
             isTransmitting = true;
@@ -639,45 +584,30 @@
             ui.lcd.classList.add('transmitting');
             
             playSfx('tx-start');
-
-            // Unmute mic
             if (localStream) {
-                localStream.getAudioTracks().forEach(track => {
-                    track.enabled = true;
-                });
+                localStream.getAudioTracks().forEach(track => { track.enabled = true; });
             }
         }
 
         function stopPTT(e) {
-            if (e) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
+            e.preventDefault();
             if (!isTransmitting) return;
 
             isTransmitting = false;
             ui.btnPtt.classList.remove('pressed');
             ui.lcd.classList.remove('transmitting');
 
-            // Mute mic
             if (localStream) {
-                localStream.getAudioTracks().forEach(track => {
-                    track.enabled = false;
-                });
+                localStream.getAudioTracks().forEach(track => { track.enabled = false; });
             }
-            
             playSfx('tx-end');
         }
 
-        // PTT Event Listeners (Mouse & Touch)
-        ui.btnPtt.addEventListener('mousedown', startPTT);
-        ui.btnPtt.addEventListener('touchstart', startPTT, {passive: false});
-        
-        window.addEventListener('mouseup', stopPTT);
-        window.addEventListener('touchend', stopPTT);
-        // If mouse leaves button while pressed, we can decide to keep it on or stop. Usually stop.
-        ui.btnPtt.addEventListener('mouseleave', stopPTT);
-        ui.btnPtt.addEventListener('touchcancel', stopPTT);
+        // PERBAIKAN: Gunakan PointerEvents (Sangat optimal untuk Mobile & Desktop)
+        ui.btnPtt.addEventListener('pointerdown', startPTT);
+        ui.btnPtt.addEventListener('pointerup', stopPTT);
+        ui.btnPtt.addEventListener('pointerleave', stopPTT);
+        ui.btnPtt.addEventListener('pointercancel', stopPTT);
 
 
         function setupAudioLevelMonitor() {
@@ -688,20 +618,16 @@
             analyzer.fftSize = 256;
             source.connect(analyzer);
 
-            const bufferLength = analyzer.frequencyBinCount;
-            const dataArray = new Uint8Array(bufferLength);
+            const dataArray = new Uint8Array(analyzer.frequencyBinCount);
 
             function checkLevel() {
                 if (peerConnection && peerConnection.connectionState === 'connected') {
                     analyzer.getByteFrequencyData(dataArray);
                     
                     let sum = 0;
-                    for (let i = 0; i < bufferLength; i++) {
-                        sum += dataArray[i];
-                    }
-                    const average = sum / bufferLength;
+                    for (let i = 0; i < dataArray.length; i++) { sum += dataArray[i]; }
+                    const average = sum / dataArray.length;
 
-                    // If volume > threshold, show RX
                     if (average > 5 && !isTransmitting) {
                         ui.rxIndicator.style.opacity = '1';
                     } else {
@@ -714,7 +640,6 @@
             }
             checkLevel();
         }
-
 
         function updateLCD(status, roomStr, icon) {
             ui.lcdStatus.innerText = status;
@@ -729,7 +654,6 @@
         }
 
         async function hangUp() {
-            // Hentikan semua listener database agar tidak terjadi error (memory leak)
             unsubscribers.forEach(unsub => unsub());
             unsubscribers = [];
 
@@ -743,17 +667,14 @@
             }
             remoteStream = null;
             
-            // Bersihkan video element dan kembalikan layar ke LCD hijau
             ui.remoteVideo.srcObject = null;
             ui.localVideo.srcObject = null;
             ui.lcd.classList.remove('video-mode');
 
-            // Optional: delete room from firestore if caller
             if (isCaller && roomId && auth.currentUser) {
                 try {
-                   const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
-                   await deleteDoc(roomRef);
-                } catch(e) { console.log("Error cleaning up room", e); }
+                   await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId));
+                } catch(e) {}
             }
 
             roomId = null;
@@ -765,14 +686,11 @@
             ui.rxIndicator.style.opacity = '0';
         }
 
-        // Button Listeners
+        // Event listener standard untuk click pada HP
         ui.btnCreate.addEventListener('click', createRoom);
         
         ui.btnJoin.addEventListener('click', () => {
-            const val = ui.joinInput.value.trim();
-            if (val) {
-                joinRoom(val);
-            }
+            joinRoom(ui.joinInput.value.trim());
         });
 
         ui.btnHangup.addEventListener('click', hangUp);
@@ -780,18 +698,22 @@
         ui.btnCopy.addEventListener('click', () => {
             const shortId = ui.lcdRoomText.innerText;
             if (shortId && shortId !== '---') {
-                try {
+                navigator.clipboard.writeText(shortId).then(() => {
+                    const originalText = ui.btnCopy.innerText;
+                    ui.btnCopy.innerText = "Copied!";
+                    setTimeout(() => ui.btnCopy.innerText = originalText, 2000);
+                }).catch(e => {
+                    // Fallback untuk HP lama
                     const el = document.createElement('textarea');
                     el.value = shortId;
                     document.body.appendChild(el);
                     el.select();
                     document.execCommand('copy');
                     document.body.removeChild(el);
-                    
                     const originalText = ui.btnCopy.innerText;
                     ui.btnCopy.innerText = "Copied!";
                     setTimeout(() => ui.btnCopy.innerText = originalText, 2000);
-                } catch(e) { console.error("Copy failed", e); }
+                });
             }
         });
 
@@ -801,56 +723,39 @@
             if (!localStream) return;
 
             if (isVideoEnabled) {
-                // PROSES MEMATIKAN KAMERA (Lampu indikator akan mati)
                 const videoTrack = localStream.getVideoTracks()[0];
                 if (videoTrack) {
-                    videoTrack.stop(); // Matikan hardware kamera sepenuhnya
-                    localStream.removeTrack(videoTrack); // Hapus track dari stream lokal
+                    videoTrack.stop(); 
+                    localStream.removeTrack(videoTrack); 
                 }
-                
                 isVideoEnabled = false;
                 ui.videoIcon.innerText = "🚫";
                 ui.videoBtnText.innerText = "Kamera: OFF";
                 ui.localVideo.classList.add('opacity-20', 'grayscale');
-                
             } else {
-                // PROSES MENYALAKAN KEMBALI KAMERA
                 try {
-                    // Minta akses kamera lagi. 
-                    // Browser TIDAK akan memunculkan popup karena izin sudah diingat di awal sesi.
-                    const newStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    const newStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
                     const newVideoTrack = newStream.getVideoTracks()[0];
-                    
-                    // Tambahkan track video baru ke stream lokal
                     localStream.addTrack(newVideoTrack);
-                    
-                    // Refresh tampilan video lokal di layar LCD
                     ui.localVideo.srcObject = localStream;
                     
-                    // Jika sedang dalam panggilan (terhubung ke PeerConnection), update jalurnya
                     if (peerConnection) {
                         const sender = peerConnection.getSenders().find(s => s.track && s.track.kind === 'video');
-                        if (sender) {
-                            // Ganti track video lama (yang sudah mati) dengan track video yang baru nyala
-                            sender.replaceTrack(newVideoTrack);
-                        } else {
-                            // Jika sebelumnya tidak ada sender, tambahkan track baru
-                            peerConnection.addTrack(newVideoTrack, localStream);
-                        }
+                        if (sender) sender.replaceTrack(newVideoTrack);
+                        else peerConnection.addTrack(newVideoTrack, localStream);
                     }
 
                     isVideoEnabled = true;
                     ui.videoIcon.innerText = "📷";
                     ui.videoBtnText.innerText = "Kamera: ON";
                     ui.localVideo.classList.remove('opacity-20', 'grayscale');
-                    
                 } catch (error) {
-                    console.error("Gagal menyalakan kembali kamera:", error);
-                    alert("Gagal mengakses perangkat kamera.");
+                    alert("Gagal menyalakan kembali kamera.");
                 }
             }
         });
-        // Initialize Application
+
+        // Jalankan aplikasi
         initApp();
 
     </script>
