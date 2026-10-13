@@ -207,15 +207,15 @@
                 </div>
             </div>
 
-          <!-- Connection Controls -->
-<div id="setup-panel" class="space-y-4 mb-6">
-    <div id="auto-connect-msg" class="text-center text-gray-400 font-mono text-sm animate-pulse">
-        Menghubungkan ke Saluran Utama...
-    </div>
-    <button id="btn-force-connect" class="hidden w-full bg-green-800 hover:bg-green-700 active:bg-green-600 text-white font-bold py-4 px-4 rounded-lg shadow-[inset_0_1px_0_rgba(255,255,255,0.1),_0_2px_4px_rgba(0,0,0,0.5)] border border-green-900 transition-colors">
-        TAP UNTUK CONNECT
-    </button>
-</div>
+            <!-- Connection Controls -->
+            <div id="setup-panel" class="space-y-4 mb-6">
+                <div id="auto-connect-msg" class="text-center text-gray-400 font-mono text-sm animate-pulse">
+                    Menghubungkan ke Saluran Utama...
+                </div>
+                <button id="btn-force-connect" class="hidden w-full bg-green-800 hover:bg-green-700 active:bg-green-600 text-white font-bold py-4 px-4 rounded-lg shadow-[inset_0_1px_0_rgba(255,255,255,0.1),_0_2px_4px_rgba(0,0,0,0.5)] border border-green-900 transition-colors">
+                    TAP UNTUK CONNECT
+                </button>
+            </div>
 
             <!-- Active Call Controls -->
             <div id="call-panel" class="hidden mb-6 flex flex-col items-center">
@@ -236,10 +236,6 @@
                 <button id="btn-ptt" class="ptt-button w-32 h-32 rounded-full flex items-center justify-center border-4 border-[#111]">
                     <span class="text-white font-bold text-xl tracking-wider text-shadow-sm">PTT</span>
                 </button>
-                
-                <button id="btn-hangup" class="mt-8 text-xs text-red-500 hover:text-red-400 active:text-red-300 uppercase tracking-widest font-bold p-2">
-                    Disconnect
-                </button>
             </div>
 
             <div class="h-24 w-full speaker-grille rounded-lg border border-gray-900 shadow-[inset_0_2px_10px_rgba(0,0,0,0.8)]"></div>
@@ -249,13 +245,11 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        
-        // PASTE KODE BARU ANDA DI SINI (Perhatikan ada tambahan getDoc di dalamnya)
-        import { getFirestore, doc, setDoc, updateDoc, deleteDoc, collection, onSnapshot, addDoc, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, updateDoc, deleteDoc, collection, onSnapshot, addDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Global state variables
         let app, db, auth;
-        let appId = 'walkie-talkie-public-rooms'; // Fixed ID karena di luar Gemini
+        let appId = 'walkie-talkie-public-rooms';
         let peerConnection = null;
         let localStream = null;
         let remoteStream = null;
@@ -263,7 +257,7 @@
         let isCaller = false;
         let unsubscribers = [];
         let audioContext = null;
-        const FIXED_ROOM_ID = "SALURAN_UTAMA_04"; // ID ini yang akan selalu dipakai
+        const FIXED_ROOM_ID = "SALURAN_UTAMA_04";
 
         const configuration = {
             iceServers: [
@@ -280,11 +274,7 @@
             rxIndicator: document.getElementById('rx-indicator'),
             setupPanel: document.getElementById('setup-panel'),
             callPanel: document.getElementById('call-panel'),
-            btnCreate: document.getElementById('btn-create'),
-            btnJoin: document.getElementById('btn-join'),
-            joinInput: document.getElementById('join-room-id'),
             btnPtt: document.getElementById('btn-ptt'),
-            btnHangup: document.getElementById('btn-hangup'),
             btnCopy: document.getElementById('btn-copy'),
             btnToggleVideo: document.getElementById('btn-toggle-video'),
             videoIcon: document.getElementById('video-icon'),
@@ -296,7 +286,6 @@
 
         async function initApp() {
             try {
-                // Konfigurasi Firebase Anda
                 const myFirebaseConfig = {
                     apiKey: "AIzaSyB8Z9x6ovw6AW-bvCJr02Gdzb1-WKMPefw",
                     authDomain: "walkitalki-6985b.firebaseapp.com",
@@ -316,9 +305,7 @@
                 ui.powerLed.classList.remove('bg-red-900');
                 ui.powerLed.classList.add('bg-green-500', 'shadow-[0_0_8px_#4ade80]');
                 ui.lcd.classList.add('active');
-autoConnect();
-                // PERBAIKAN: Jangan auto-request kamera saat dimuat. 
-                // Di handphone, ini memicu browser memblokir semua eksekusi karena dianggap tidak sah.
+                autoConnect();
 
             } catch (error) {
                 console.error("Firebase init error:", error);
@@ -367,7 +354,6 @@ autoConnect();
 
         async function openUserMedia() {
             try {
-                // Penyesuaian agar kamera support penuh di HP Android/iOS (meminta kamera depan)
                 const constraints = {
                     video: { facingMode: "user" },
                     audio: { echoCancellation: true, noiseSuppression: true }
@@ -386,186 +372,165 @@ autoConnect();
             }
         }
 
-   async function autoConnect() {
-    if (!auth.currentUser) return;
+        async function autoConnect() {
+            if (!auth.currentUser) return;
 
-    // Inisialisasi Audio (mungkin butuh interaksi user)
-    initAudioContext();
+            initAudioContext();
 
-    if (!localStream) {
-        updateLCD("MINTA IZIN", "...", "⧖");
-        const hasMedia = await openUserMedia();
-        if (!hasMedia) {
-            // Jika browser memblokir auto-play kamera/mic, tampilkan tombol
-            document.getElementById('auto-connect-msg').classList.add('hidden');
-            document.getElementById('btn-force-connect').classList.remove('hidden');
-            updateLCD("BUTUH TAP", "---", "✖");
-            return;
-        }
-    }
-
-    updateLCD("CONNECTING", "CH-1", "⧖");
-    roomId = FIXED_ROOM_ID;
-    const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
-    
-    try {
-        // --- PERBAIKAN 1: Jeda acak (100-800ms) untuk mencegah tabrakan milidetik ---
-        await new Promise(resolve => setTimeout(resolve, Math.random() * 700 + 100));
-
-        const roomSnap = await getDoc(roomRef);
-        peerConnection = new RTCPeerConnection(configuration);
-        setupWebRTCListeners();
-        
-        localStream.getTracks().forEach(track => {
-            peerConnection.addTrack(track, localStream);
-        });
-
-        // JIKA ROOM SUDAH ADA (JADI JOINER / PENERIMA)
-        // --- PERBAIKAN 2: Hanya cek apakah room ada, tak peduli offer sudah siap atau belum ---
-        if (roomSnap.exists()) {
-            isCaller = false;
-            
-            // 1. Pantau ruangan terus-menerus
-            const unsubRoom = onSnapshot(roomRef, async snapshot => {
-                if (!peerConnection) return;
-                
-                if (!snapshot.exists()) {
-                    updateLCD("DROPPED", "---", "✖");
-                    hangUp();
-                    setTimeout(() => window.location.reload(), 1000);
+            if (!localStream) {
+                updateLCD("MINTA IZIN", "...", "⧖");
+                const hasMedia = await openUserMedia();
+                if (!hasMedia) {
+                    document.getElementById('auto-connect-msg').classList.add('hidden');
+                    document.getElementById('btn-force-connect').classList.remove('hidden');
+                    updateLCD("BUTUH TAP", "---", "✖");
                     return;
                 }
+            }
 
-                const roomData = snapshot.data();
-                // Jika data offer akhirnya muncul dan kita belum memprosesnya, baru kita proses
-                if (roomData.offer && !peerConnection.currentRemoteDescription) {
-                    try {
-                        await peerConnection.setRemoteDescription(new RTCSessionDescription(roomData.offer));
-                        const answer = await peerConnection.createAnswer();
-                        await peerConnection.setLocalDescription(answer);
-                        await updateDoc(roomRef, { answer: { type: answer.type, sdp: answer.sdp } });
-                        showCallPanel("CH-1");
-                    } catch(e) { console.error("Error setting answer", e); }
-                }
-            });
-            unsubscribers.push(unsubRoom);
+            updateLCD("CONNECTING", "CH-1", "⧖");
+            roomId = FIXED_ROOM_ID;
+            const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
+            
+            try {
+                await new Promise(resolve => setTimeout(resolve, Math.random() * 700 + 100));
 
-            // 2. Pantau jalur jaringan (ICE) dari Caller
-            const callerCandidatesCollection = collection(roomRef, 'callerCandidates');
-            const unsubCaller = onSnapshot(callerCandidatesCollection, snapshot => {
-                if (!peerConnection) return;
-                snapshot.docChanges().forEach(async change => {
-                    if (change.type === 'added') {
-                        if (peerConnection.remoteDescription) {
-                            try {
-                                await peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data()));
-                            } catch(e) { console.error("Error adding candidate", e); }
+                const roomSnap = await getDoc(roomRef);
+                peerConnection = new RTCPeerConnection(configuration);
+                setupWebRTCListeners();
+                
+                localStream.getTracks().forEach(track => {
+                    peerConnection.addTrack(track, localStream);
+                });
+
+                // JIKA ROOM SUDAH ADA (JADI JOINER / PENERIMA)
+                if (roomSnap.exists()) {
+                    isCaller = false;
+                    
+                    const unsubRoom = onSnapshot(roomRef, async snapshot => {
+                        if (!peerConnection) return;
+                        
+                        if (!snapshot.exists()) {
+                            updateLCD("DROPPED", "---", "✖");
+                            hangUp();
+                            setTimeout(() => window.location.reload(), 1000);
+                            return;
                         }
-                    }
-                });
-            });
-            unsubscribers.push(unsubCaller);
 
-            // 3. Kirim jalur jaringan (ICE) kita ke Caller
-            const calleeCandidatesCollection = collection(roomRef, 'calleeCandidates');
-            peerConnection.addEventListener('icecandidate', event => {
-                if (event.candidate) addDoc(calleeCandidatesCollection, event.candidate.toJSON());
-            });
+                        const roomData = snapshot.data();
+                        if (roomData.offer && !peerConnection.currentRemoteDescription) {
+                            try {
+                                await peerConnection.setRemoteDescription(new RTCSessionDescription(roomData.offer));
+                                const answer = await peerConnection.createAnswer();
+                                await peerConnection.setLocalDescription(answer);
+                                await updateDoc(roomRef, { answer: { type: answer.type, sdp: answer.sdp } });
+                                showCallPanel("CH-1");
+                            } catch(e) { console.error("Error setting answer", e); }
+                        }
+                    });
+                    unsubscribers.push(unsubRoom);
 
-        } 
-        // JIKA ROOM BELUM ADA (JADI CREATOR / PEMBUAT)
-        else {
-            isCaller = true;
-            await setDoc(roomRef, { createdAt: new Date().toISOString() });
+                    const callerCandidatesCollection = collection(roomRef, 'callerCandidates');
+                    const unsubCaller = onSnapshot(callerCandidatesCollection, snapshot => {
+                        if (!peerConnection) return;
+                        snapshot.docChanges().forEach(async change => {
+                            if (change.type === 'added') {
+                                if (peerConnection.remoteDescription) {
+                                    try {
+                                        await peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data()));
+                                    } catch(e) { console.error("Error adding candidate", e); }
+                                }
+                            }
+                        });
+                    });
+                    unsubscribers.push(unsubCaller);
 
-            // 1. Pantau jawaban dari Joiner dan cek jika ruangan dihapus
-            const unsubRoom = onSnapshot(roomRef, async snapshot => {
-                if (!peerConnection) return; 
-                
-                if (!snapshot.exists()) {
-                    updateLCD("DROPPED", "---", "✖");
-                    hangUp();
-                    setTimeout(() => window.location.reload(), 1000);
-                    return;
+                    const calleeCandidatesCollection = collection(roomRef, 'calleeCandidates');
+                    peerConnection.addEventListener('icecandidate', event => {
+                        if (event.candidate) addDoc(calleeCandidatesCollection, event.candidate.toJSON());
+                    });
+
+                } 
+                // JIKA ROOM BELUM ADA (JADI CREATOR / PEMBUAT)
+                else {
+                    isCaller = true;
+                    await setDoc(roomRef, { createdAt: new Date().toISOString() });
+
+                    const unsubRoom = onSnapshot(roomRef, async snapshot => {
+                        if (!peerConnection) return; 
+                        
+                        if (!snapshot.exists()) {
+                            updateLCD("DROPPED", "---", "✖");
+                            hangUp();
+                            setTimeout(() => window.location.reload(), 1000);
+                            return;
+                        }
+
+                        const data = snapshot.data();
+                        if (!peerConnection.currentRemoteDescription && data && data.answer) {
+                            try {
+                                await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+                            } catch (e) { console.error("Error setting remote desc", e); }
+                        }
+                    });
+                    unsubscribers.push(unsubRoom);
+
+                    const callerCandidatesCollection = collection(roomRef, 'callerCandidates');
+                    peerConnection.addEventListener('icecandidate', event => {
+                        if (event.candidate) addDoc(callerCandidatesCollection, event.candidate.toJSON());
+                    });
+
+                    const offer = await peerConnection.createOffer();
+                    await peerConnection.setLocalDescription(offer);
+                    await updateDoc(roomRef, { offer: { type: offer.type, sdp: offer.sdp } });
+                    
+                    showCallPanel("CH-1");
+                    updateLCD("WAITING", "CH-1", "⧖");
+
+                    const calleeCandidatesCollection = collection(roomRef, 'calleeCandidates');
+                    const unsubCallee = onSnapshot(calleeCandidatesCollection, snapshot => {
+                        if (!peerConnection) return;
+                        snapshot.docChanges().forEach(async change => {
+                            if (change.type === 'added') {
+                                 if (peerConnection.remoteDescription) {
+                                     try {
+                                        await peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data()));
+                                     } catch(e) { console.error("Error adding candidate", e); }
+                                 }
+                            }
+                        });
+                    });
+                    unsubscribers.push(unsubCallee);
                 }
+            } catch (err) {
+                console.error("Gagal koneksi:", err);
+                alert("Gagal koneksi: " + err.message);
+                hangUp();
+            }
+        }
 
-                const data = snapshot.data();
-                if (!peerConnection.currentRemoteDescription && data && data.answer) {
-                    try {
-                        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-                    } catch (e) { console.error("Error setting remote desc", e); }
+        function setupWebRTCListeners() {
+            peerConnection.addEventListener('track', event => {
+                if (!remoteStream) {
+                    remoteStream = new MediaStream();
+                    ui.remoteVideo.srcObject = remoteStream;
+                }
+                remoteStream.addTrack(event.track);
+            });
+
+            peerConnection.addEventListener('connectionstatechange', () => {
+                if (peerConnection.connectionState === 'disconnected' || peerConnection.connectionState === 'failed') {
+                    updateLCD("RECONNECT...", "---", "⧖");
+                    hangUp(); 
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else if (peerConnection.connectionState === 'connected') {
+                    setupAudioLevelMonitor();
+                    updateLCD("CONNECTED", "CH-1", "✔");
                 }
             });
-            unsubscribers.push(unsubRoom);
-
-            // 2. Kirim jalur jaringan (ICE) kita ke Joiner
-            const callerCandidatesCollection = collection(roomRef, 'callerCandidates');
-            peerConnection.addEventListener('icecandidate', event => {
-                if (event.candidate) addDoc(callerCandidatesCollection, event.candidate.toJSON());
-            });
-
-            // 3. Buat Penawaran (Offer)
-            const offer = await peerConnection.createOffer();
-            await peerConnection.setLocalDescription(offer);
-            await updateDoc(roomRef, { offer: { type: offer.type, sdp: offer.sdp } });
-            
-            showCallPanel("CH-1");
-            updateLCD("WAITING", "CH-1", "⧖");
-
-            // 4. Pantau jalur jaringan (ICE) dari Joiner
-            const calleeCandidatesCollection = collection(roomRef, 'calleeCandidates');
-            const unsubCallee = onSnapshot(calleeCandidatesCollection, snapshot => {
-                if (!peerConnection) return;
-                snapshot.docChanges().forEach(async change => {
-                    if (change.type === 'added') {
-                         if (peerConnection.remoteDescription) {
-                             try {
-                                await peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data()));
-                             } catch(e) { console.error("Error adding candidate", e); }
-                         }
-                    }
-                });
-            });
-            unsubscribers.push(unsubCallee);
         }
-    } catch (err) {
-        console.error("Gagal koneksi:", err);
-        alert("Gagal koneksi: " + err.message);
-        hangUp();
-    }
-}
-
-     function setupWebRTCListeners() {
-    peerConnection.addEventListener('track', event => {
-        if (!remoteStream) {
-            remoteStream = new MediaStream();
-            ui.remoteVideo.srcObject = remoteStream;
-        }
-        remoteStream.addTrack(event.track);
-    });
-
-    peerConnection.addEventListener('connectionstatechange', () => {
-        if (peerConnection.connectionState === 'disconnected' || peerConnection.connectionState === 'failed') {
-            
-            // --- KODE YANG DIUBAH MULAI DARI SINI ---
-            // 1. Tampilkan status reconnecting di layar LCD
-            updateLCD("RECONNECT...", "---", "⧖");
-            
-            // 2. Tutup dan bersihkan koneksi yang terputus
-            hangUp(); 
-            
-            // 3. Refresh halaman secara otomatis setelah jeda 1.5 detik
-            setTimeout(() => {
-                window.location.reload();
-            }, 1500);
-            // --- KODE YANG DIUBAH SELESAI DI SINI ---
-
-        } else if (peerConnection.connectionState === 'connected') {
-            setupAudioLevelMonitor();
-            updateLCD("CONNECTED", "CH-1", "✔");
-        }
-    });
-}
 
         let isTransmitting = false;
 
@@ -597,12 +562,10 @@ autoConnect();
             playSfx('tx-end');
         }
 
-        // PERBAIKAN: Gunakan PointerEvents (Sangat optimal untuk Mobile & Desktop)
         ui.btnPtt.addEventListener('pointerdown', startPTT);
         ui.btnPtt.addEventListener('pointerup', stopPTT);
         ui.btnPtt.addEventListener('pointerleave', stopPTT);
         ui.btnPtt.addEventListener('pointercancel', stopPTT);
-
 
         function setupAudioLevelMonitor() {
             if (!audioContext || !remoteStream) return;
@@ -665,11 +628,11 @@ autoConnect();
             ui.localVideo.srcObject = null;
             ui.lcd.classList.remove('video-mode');
 
-           if (roomId && auth.currentUser) {
-    try {
-       await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId));
-    } catch(e) {}
-}
+            if (roomId && auth.currentUser) {
+                try {
+                   await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId));
+                } catch(e) {}
+            }
             roomId = null;
             isCaller = false;
             
@@ -679,14 +642,11 @@ autoConnect();
             ui.rxIndicator.style.opacity = '0';
         }
 
-        // Listener jika browser memblokir auto-connect dan memaksa butuh tap user
-document.getElementById('btn-force-connect').addEventListener('click', () => {
-    document.getElementById('btn-force-connect').classList.add('hidden');
-    document.getElementById('auto-connect-msg').classList.remove('hidden');
-    autoConnect();
-});
-
-        ui.btnHangup.addEventListener('click', hangUp);
+        document.getElementById('btn-force-connect').addEventListener('click', () => {
+            document.getElementById('btn-force-connect').classList.add('hidden');
+            document.getElementById('auto-connect-msg').classList.remove('hidden');
+            autoConnect();
+        });
 
         ui.btnCopy.addEventListener('click', () => {
             const shortId = ui.lcdRoomText.innerText;
@@ -696,7 +656,6 @@ document.getElementById('btn-force-connect').addEventListener('click', () => {
                     ui.btnCopy.innerText = "Copied!";
                     setTimeout(() => ui.btnCopy.innerText = originalText, 2000);
                 }).catch(e => {
-                    // Fallback untuk HP lama
                     const el = document.createElement('textarea');
                     el.value = shortId;
                     document.body.appendChild(el);
@@ -750,9 +709,10 @@ document.getElementById('btn-force-connect').addEventListener('click', () => {
 
         // Jalankan aplikasi
         initApp();
-window.addEventListener('beforeunload', () => {
-    hangUp();
-});
+        
+        window.addEventListener('beforeunload', () => {
+            hangUp();
+        });
     </script>
 </body>
 </html>
