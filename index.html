@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>WebRTC Walkie Talkie Auto-Connect</title>
+    <title>WebRTC Walkie Talkie Mobile</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
@@ -17,7 +17,7 @@
             min-height: 100vh;
             margin: 0;
             font-family: 'Inter', sans-serif;
-            touch-action: pan-y;
+            touch-action: pan-y; /* Optimal untuk mobile: cegah zoom layar tapi izinkan scroll */
             -webkit-tap-highlight-color: transparent;
         }
 
@@ -81,6 +81,7 @@
             box-shadow: inset 2px 2px 10px rgba(0,0,0,0.4), 0 0 15px rgba(163, 196, 130, 0.4);
         }
 
+        /* Video Mode Styles */
         .video-feed {
             position: absolute;
             inset: 0;
@@ -168,6 +169,7 @@
             text-shadow: 0 0 5px red;
         }
 
+        /* Styling native button untuk HP */
         button {
             touch-action: manipulation;
         }
@@ -175,16 +177,19 @@
 </head>
 <body class="text-gray-200 antialiased">
 
+    <!-- Main Walkie Talkie Device -->
     <div class="relative w-80 max-w-[95vw] mt-16 mb-8">
         <div class="antenna"></div>
         <div class="volume-knob"></div>
 
         <div class="walkie-body p-6 border-4 border-[#1a2017]">
+            <!-- Brand / Top Area -->
             <div class="flex justify-between items-center mb-4 text-xs font-bold tracking-widest text-gray-500 uppercase">
-                <span>Comms-Pro Auto</span>
+                <span>Comms-Pro</span>
                 <span class="w-3 h-3 rounded-full bg-red-900 border border-gray-800 shadow-[inset_0_1px_3px_rgba(0,0,0,0.8)]" id="power-led"></span>
             </div>
 
+            <!-- LCD / Video Screen -->
             <div id="lcd" class="lcd-screen rounded-lg h-44 mb-6 text-[#111] transition-all duration-300">
                 <video id="remote-video" class="video-feed" autoplay playsinline></video>
                 <video id="local-video" class="pip-video" autoplay playsinline muted></video>
@@ -202,17 +207,22 @@
                 </div>
             </div>
 
-            <!-- Panel Auto Connect (Tanpa input Room ID) -->
-            <div id="setup-panel" class="space-y-4 mb-6">
-                <div>
-                    <button id="btn-auto-connect" class="w-full bg-blue-800 hover:bg-blue-700 active:bg-blue-600 text-white font-bold py-4 px-4 rounded-lg shadow-[inset_0_1px_0_rgba(255,255,255,0.1),_0_2px_4px_rgba(0,0,0,0.5)] border border-blue-900 transition-colors uppercase tracking-widest text-lg">
-                        Auto Connect
-                    </button>
-                </div>
-                <p class="text-xs text-center text-gray-500 font-mono mt-2">Mencari frekuensi tersedia secara otomatis</p>
-            </div>
+          <!-- Connection Controls -->
+<div id="setup-panel" class="space-y-4 mb-6">
+    <div id="auto-connect-msg" class="text-center text-gray-400 font-mono text-sm animate-pulse">
+        Menghubungkan ke Saluran Utama...
+    </div>
+    <button id="btn-force-connect" class="hidden w-full bg-green-800 hover:bg-green-700 active:bg-green-600 text-white font-bold py-4 px-4 rounded-lg shadow-[inset_0_1px_0_rgba(255,255,255,0.1),_0_2px_4px_rgba(0,0,0,0.5)] border border-green-900 transition-colors">
+        TAP UNTUK CONNECT
+    </button>
+</div>
 
+            <!-- Active Call Controls -->
             <div id="call-panel" class="hidden mb-6 flex flex-col items-center">
+                <button id="btn-copy" class="mb-4 text-xs bg-gray-800 text-gray-300 py-1 px-3 rounded shadow border border-gray-700 hover:text-white active:bg-gray-700">
+                    Copy Room ID
+                </button>
+                
                 <div class="flex space-x-2 mb-3">
                     <button id="btn-toggle-video" class="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 py-1.5 px-3 rounded shadow border border-gray-700 flex items-center space-x-1 transition-colors active:bg-gray-700">
                         <span id="video-icon">📷</span>
@@ -222,6 +232,7 @@
                 
                 <p class="text-xs text-center text-gray-400 mb-2 font-mono">HOLD TO SPEAK</p>
                 
+                <!-- Tombol PTT menggunakan Event Pointer Khusus Layar Sentuh -->
                 <button id="btn-ptt" class="ptt-button w-32 h-32 rounded-full flex items-center justify-center border-4 border-[#111]">
                     <span class="text-white font-bold text-xl tracking-wider text-shadow-sm">PTT</span>
                 </button>
@@ -238,10 +249,13 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, updateDoc, deleteDoc, collection, onSnapshot, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // PASTE KODE BARU ANDA DI SINI (Perhatikan ada tambahan getDoc di dalamnya)
+        import { getFirestore, doc, setDoc, updateDoc, deleteDoc, collection, onSnapshot, addDoc, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        // Global state variables
         let app, db, auth;
-        let appId = 'walkie-talkie-public-rooms'; 
+        let appId = 'walkie-talkie-public-rooms'; // Fixed ID karena di luar Gemini
         let peerConnection = null;
         let localStream = null;
         let remoteStream = null;
@@ -249,7 +263,8 @@
         let isCaller = false;
         let unsubscribers = [];
         let audioContext = null;
-        
+        const FIXED_ROOM_ID = "SALURAN_UTAMA_01"; // ID ini yang akan selalu dipakai
+
         const configuration = {
             iceServers: [
                 { urls: 'stun:stun1.l.google.com:19302' },
@@ -265,9 +280,12 @@
             rxIndicator: document.getElementById('rx-indicator'),
             setupPanel: document.getElementById('setup-panel'),
             callPanel: document.getElementById('call-panel'),
-            btnAutoConnect: document.getElementById('btn-auto-connect'),
+            btnCreate: document.getElementById('btn-create'),
+            btnJoin: document.getElementById('btn-join'),
+            joinInput: document.getElementById('join-room-id'),
             btnPtt: document.getElementById('btn-ptt'),
             btnHangup: document.getElementById('btn-hangup'),
+            btnCopy: document.getElementById('btn-copy'),
             btnToggleVideo: document.getElementById('btn-toggle-video'),
             videoIcon: document.getElementById('video-icon'),
             videoBtnText: document.getElementById('video-btn-text'),
@@ -278,6 +296,7 @@
 
         async function initApp() {
             try {
+                // Konfigurasi Firebase Anda
                 const myFirebaseConfig = {
                     apiKey: "AIzaSyB8Z9x6ovw6AW-bvCJr02Gdzb1-WKMPefw",
                     authDomain: "walkitalki-6985b.firebaseapp.com",
@@ -297,6 +316,9 @@
                 ui.powerLed.classList.remove('bg-red-900');
                 ui.powerLed.classList.add('bg-green-500', 'shadow-[0_0_8px_#4ade80]');
                 ui.lcd.classList.add('active');
+autoConnect();
+                // PERBAIKAN: Jangan auto-request kamera saat dimuat. 
+                // Di handphone, ini memicu browser memblokir semua eksekusi karena dianggap tidak sah.
 
             } catch (error) {
                 console.error("Firebase init error:", error);
@@ -345,6 +367,7 @@
 
         async function openUserMedia() {
             try {
+                // Penyesuaian agar kamera support penuh di HP Android/iOS (meminta kamera depan)
                 const constraints = {
                     video: { facingMode: "user" },
                     audio: { echoCancellation: true, noiseSuppression: true }
@@ -356,96 +379,97 @@
                 localStream.getAudioTracks().forEach(track => { track.enabled = false; });
                 return true;
             } catch (error) {
-                alert("Gagal membuka Kamera/Mikrofon.\n" + error.message);
+                console.error("Error media devices:", error);
+                alert("Gagal membuka Kamera/Mikrofon. Pastikan Anda memberi izin pada pop-up browser.\n\nDetail: " + error.message);
                 updateLCD("NO CAM/MIC", "---", "✖");
                 return false;
             }
         }
 
-        // --- SISTEM AUTO MATCHMAKING BARU ---
-        async function autoConnect() {
-            if (!auth.currentUser) {
-                alert("Menunggu koneksi server...");
-                return;
-            }
+      async function autoConnect() {
+    if (!auth.currentUser) return;
 
-            initAudioContext();
-            
-            if (!localStream) {
-                updateLCD("MINTA IZIN", "...", "⧖");
-                const hasMedia = await openUserMedia();
-                if (!hasMedia) return;
-            }
+    // Inisialisasi Audio (mungkin butuh interaksi user)
+    initAudioContext();
 
-            updateLCD("SEARCHING", "AUTO", "⧖");
-
-            try {
-                // Cari channel yang tersedia (yang ada offer tapi tidak ada answer)
-                const roomsCol = collection(db, 'artifacts', appId, 'public', 'data', 'rooms');
-                const roomsSnapshot = await getDocs(roomsCol);
-
-                let availableRoomId = null;
-                let roomData = null;
-
-                for (const doc of roomsSnapshot.docs) {
-                    const data = doc.data();
-                    if (data.offer && !data.answer) {
-                        availableRoomId = doc.id;
-                        roomData = data;
-                        break; 
-                    }
-                }
-
-                if (availableRoomId) {
-                    // Jika ada yang menunggu, gabung ke ruangan tersebut
-                    await joinExistingRoom(availableRoomId, roomData);
-                } else {
-                    // Jika kosong, buat ruangan baru dan tunggu partner
-                    await createNewRoom();
-                }
-
-            } catch (err) {
-                alert("Error Auto Connect: " + err.message);
-                hangUp();
-            }
+    if (!localStream) {
+        updateLCD("MINTA IZIN", "...", "⧖");
+        const hasMedia = await openUserMedia();
+        if (!hasMedia) {
+            // Jika browser memblokir auto-play kamera/mic, tampilkan tombol
+            document.getElementById('auto-connect-msg').classList.add('hidden');
+            document.getElementById('btn-force-connect').classList.remove('hidden');
+            updateLCD("BUTUH TAP", "---", "✖");
+            return;
         }
+    }
 
-        async function createNewRoom() {
-            isCaller = true;
-            peerConnection = new RTCPeerConnection(configuration);
-            setupWebRTCListeners();
+    updateLCD("CONNECTING", "CH-1", "⧖");
+    roomId = FIXED_ROOM_ID;
+    const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
+    
+    try {
+        const roomSnap = await getDoc(roomRef);
+        peerConnection = new RTCPeerConnection(configuration);
+        setupWebRTCListeners();
+        
+        localStream.getTracks().forEach(track => {
+            peerConnection.addTrack(track, localStream);
+        });
+
+        // JIKA ROOM SUDAH ADA (JADI JOINER)
+        if (roomSnap.exists() && roomSnap.data().offer) {
+            isCaller = false;
+            const roomData = roomSnap.data();
             
-            localStream.getTracks().forEach(track => {
-                peerConnection.addTrack(track, localStream);
+            const calleeCandidatesCollection = collection(roomRef, 'calleeCandidates');
+            peerConnection.addEventListener('icecandidate', event => {
+                if (event.candidate) addDoc(calleeCandidatesCollection, event.candidate.toJSON());
             });
 
-            const roomRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'rooms'));
-            roomId = roomRef.id;
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(roomData.offer));
+            const answer = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answer);
+
+            await updateDoc(roomRef, { answer: { type: answer.type, sdp: answer.sdp } });
+            
+            showCallPanel("CH-1");
+            updateLCD("CONNECTED", "CH-1", "✔");
+
+            const callerCandidatesCollection = collection(roomRef, 'callerCandidates');
+            const unsubCaller = onSnapshot(callerCandidatesCollection, snapshot => {
+                if (!peerConnection) return;
+                snapshot.docChanges().forEach(async change => {
+                    if (change.type === 'added') await peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data()));
+                });
+            });
+            unsubscribers.push(unsubCaller);
+
+        } 
+        // JIKA ROOM BELUM ADA (JADI CREATOR)
+        else {
+            isCaller = true;
+            await setDoc(roomRef, { createdAt: new Date().toISOString() });
 
             const callerCandidatesCollection = collection(roomRef, 'callerCandidates');
             peerConnection.addEventListener('icecandidate', event => {
-                if (event.candidate) {
-                    addDoc(callerCandidatesCollection, event.candidate.toJSON());
-                }
+                if (event.candidate) addDoc(callerCandidatesCollection, event.candidate.toJSON());
             });
 
             const offer = await peerConnection.createOffer();
             await peerConnection.setLocalDescription(offer);
 
-            await setDoc(roomRef, {
-                offer: { type: offer.type, sdp: offer.sdp },
-                createdAt: new Date().toISOString()
-            });
+            await updateDoc(roomRef, { offer: { type: offer.type, sdp: offer.sdp } });
             
-            showCallPanel();
-            updateLCD("WAITING", "PARTNER", "⧖");
+            showCallPanel("CH-1");
+            updateLCD("WAITING", "CH-1", "⧖");
 
             const unsubRoom = onSnapshot(roomRef, async snapshot => {
                 if (!peerConnection) return; 
                 const data = snapshot.data();
                 if (!peerConnection.currentRemoteDescription && data && data.answer) {
                     await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-                    updateLCD("CONNECTED", "LINKED", "✔");
+                    updateLCD("CONNECTED", "CH-1", "✔");
                 }
             });
             unsubscribers.push(unsubRoom);
@@ -454,56 +478,16 @@
             const unsubCallee = onSnapshot(calleeCandidatesCollection, snapshot => {
                 if (!peerConnection) return;
                 snapshot.docChanges().forEach(async change => {
-                    if (change.type === 'added') {
-                        await peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data()));
-                    }
+                    if (change.type === 'added') await peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data()));
                 });
             });
             unsubscribers.push(unsubCallee);
         }
-
-        async function joinExistingRoom(fullRoomId, roomData) {
-            isCaller = false;
-            roomId = fullRoomId;
-            const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
-
-            peerConnection = new RTCPeerConnection(configuration);
-            setupWebRTCListeners();
-
-            localStream.getTracks().forEach(track => {
-                peerConnection.addTrack(track, localStream);
-            });
-
-            const calleeCandidatesCollection = collection(roomRef, 'calleeCandidates');
-            peerConnection.addEventListener('icecandidate', event => {
-                if (event.candidate) {
-                    addDoc(calleeCandidatesCollection, event.candidate.toJSON());
-                }
-            });
-
-            await peerConnection.setRemoteDescription(new RTCSessionDescription(roomData.offer));
-            const answer = await peerConnection.createAnswer();
-            await peerConnection.setLocalDescription(answer);
-
-            await updateDoc(roomRef, {
-                answer: { type: answer.type, sdp: answer.sdp }
-            });
-
-            showCallPanel();
-            updateLCD("CONNECTED", "LINKED", "✔");
-
-            const callerCandidatesCollection = collection(roomRef, 'callerCandidates');
-            const unsubCaller = onSnapshot(callerCandidatesCollection, snapshot => {
-                if (!peerConnection) return;
-                snapshot.docChanges().forEach(async change => {
-                    if (change.type === 'added') {
-                        await peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data()));
-                    }
-                });
-            });
-            unsubscribers.push(unsubCaller);
-        }
-        // ------------------------------------
+    } catch (err) {
+        alert("Gagal koneksi: " + err.message);
+        hangUp();
+    }
+}
 
         function setupWebRTCListeners() {
             peerConnection.addEventListener('track', event => {
@@ -554,10 +538,12 @@
             playSfx('tx-end');
         }
 
+        // PERBAIKAN: Gunakan PointerEvents (Sangat optimal untuk Mobile & Desktop)
         ui.btnPtt.addEventListener('pointerdown', startPTT);
         ui.btnPtt.addEventListener('pointerup', stopPTT);
         ui.btnPtt.addEventListener('pointerleave', stopPTT);
         ui.btnPtt.addEventListener('pointercancel', stopPTT);
+
 
         function setupAudioLevelMonitor() {
             if (!audioContext || !remoteStream) return;
@@ -596,9 +582,10 @@
             ui.statusIcon.innerText = icon || "";
         }
 
-        function showCallPanel() {
+        function showCallPanel(shortId) {
             ui.setupPanel.classList.add('hidden');
             ui.callPanel.classList.remove('hidden');
+            ui.lcdRoomText.innerText = shortId;
         }
 
         async function hangUp() {
@@ -634,10 +621,39 @@
             ui.rxIndicator.style.opacity = '0';
         }
 
-        ui.btnAutoConnect.addEventListener('click', autoConnect);
+        // Listener jika browser memblokir auto-connect dan memaksa butuh tap user
+document.getElementById('btn-force-connect').addEventListener('click', () => {
+    document.getElementById('btn-force-connect').classList.add('hidden');
+    document.getElementById('auto-connect-msg').classList.remove('hidden');
+    autoConnect();
+});
+
         ui.btnHangup.addEventListener('click', hangUp);
 
+        ui.btnCopy.addEventListener('click', () => {
+            const shortId = ui.lcdRoomText.innerText;
+            if (shortId && shortId !== '---') {
+                navigator.clipboard.writeText(shortId).then(() => {
+                    const originalText = ui.btnCopy.innerText;
+                    ui.btnCopy.innerText = "Copied!";
+                    setTimeout(() => ui.btnCopy.innerText = originalText, 2000);
+                }).catch(e => {
+                    // Fallback untuk HP lama
+                    const el = document.createElement('textarea');
+                    el.value = shortId;
+                    document.body.appendChild(el);
+                    el.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(el);
+                    const originalText = ui.btnCopy.innerText;
+                    ui.btnCopy.innerText = "Copied!";
+                    setTimeout(() => ui.btnCopy.innerText = originalText, 2000);
+                });
+            }
+        });
+
         let isVideoEnabled = true;
+        
         ui.btnToggleVideo.addEventListener('click', async () => {
             if (!localStream) return;
 
@@ -674,7 +690,9 @@
             }
         });
 
+        // Jalankan aplikasi
         initApp();
+
     </script>
 </body>
 </html>
