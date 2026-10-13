@@ -404,7 +404,7 @@ autoConnect();
         }
     }
 
-    updateLCD("CONNECTING", "CH-1", "⧖");
+    updateLCD("CONNECTING", "CH-3", "⧖");
     roomId = FIXED_ROOM_ID;
     const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
     
@@ -433,7 +433,7 @@ autoConnect();
 
             await updateDoc(roomRef, { answer: { type: answer.type, sdp: answer.sdp } });
             
-            showCallPanel("CH-1");
+            showCallPanel("CH-3");
             //updateLCD("CONNECTED", "CH-1", "✔");
 
             const callerCandidatesCollection = collection(roomRef, 'callerCandidates');
@@ -461,8 +461,8 @@ autoConnect();
 
             await updateDoc(roomRef, { offer: { type: offer.type, sdp: offer.sdp } });
             
-            showCallPanel("CH-1");
-            updateLCD("WAITING", "CH-1", "⧖");
+            showCallPanel("CH-3");
+            updateLCD("WAITING", "CH-3", "⧖");
 
             const unsubRoom = onSnapshot(roomRef, async snapshot => {
                 if (!peerConnection) return; 
@@ -505,7 +505,7 @@ autoConnect();
         } else if (peerConnection.connectionState === 'connected') {
             setupAudioLevelMonitor();
             // Pindahkan indikator connected ke sini agar lebih akurat
-            updateLCD("CONNECTED", "CH-1", "✔");
+            updateLCD("CONNECTED", "CH-3", "✔");
         }
     });
 }
