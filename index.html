@@ -132,26 +132,6 @@
             color: #4ade80; 
         }
 
-        .ptt-button {
-            background: linear-gradient(145deg, #d32f2f, #b71c1c);
-            box-shadow: 
-                -4px 4px 10px #11150f,
-                4px -4px 10px #3f4d39,
-                inset 2px 2px 5px rgba(255,100,100,0.4);
-            transition: all 0.1s ease;
-            user-select: none;
-            -webkit-user-select: none;
-            cursor: pointer;
-        }
-
-        .ptt-button:active, .ptt-button.pressed {
-            background: #9a0007;
-            box-shadow: 
-                inset 4px 4px 10px rgba(0,0,0,0.6),
-                inset -2px -2px 5px rgba(255,255,255,0.1);
-            transform: scale(0.96) translateY(2px);
-        }
-
         .speaker-grille {
             background: radial-gradient(#111 20%, transparent 25%);
             background-size: 10px 10px;
@@ -200,11 +180,11 @@
             <!-- LCD / Video Screen -->
             <div id="lcd" class="lcd-screen rounded-lg h-44 mb-6 text-[#111] transition-all duration-300">
                 <video id="remote-video" class="video-feed" autoplay playsinline></video>
-                <video id="local-video" class="pip-video" autoplay playsinline muted></video>
+                <video id="local-video" class="pip-video opacity-0 transition-opacity" autoplay playsinline muted></video>
                 
                 <div class="lcd-content p-3">
                     <div class="flex justify-between items-start">
-                        <span class="text-sm font-bold tx-indicator">TX</span>
+                        <span id="tx-indicator" class="text-sm font-bold opacity-0 transition-opacity text-red-700">TX</span>
                         <span id="rx-indicator" class="text-sm font-bold opacity-0 transition-opacity text-green-900">RX</span>
                         <span id="status-icon" class="text-sm">✖</span>
                     </div>
@@ -232,9 +212,9 @@
             <div id="setup-panel" class="space-y-4 mb-6 hidden">
                 <!-- Pesan Izin -->
                 <div id="permission-msg" class="text-center">
-                    <p class="text-gray-400 font-mono text-xs mb-4">Mempersiapkan Perangkat...</p>
+                    <p class="text-gray-400 font-mono text-xs mb-4">Mempersiapkan Mikrofon...</p>
                     <button id="btn-force-connect" class="hidden w-full bg-green-800 hover:bg-green-700 active:bg-green-600 text-white font-bold py-3 px-4 rounded-lg shadow border border-green-900 transition-colors">
-                        TAP UNTUK IZIN KAMERA/MIC
+                        TAP UNTUK IZIN MIKROFON
                     </button>
                 </div>
                 
@@ -281,17 +261,18 @@
                 
                 <div class="flex space-x-2 mb-3">
                     <button id="btn-toggle-video" class="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 py-1.5 px-3 rounded shadow border border-gray-700 flex items-center space-x-1 transition-colors active:bg-gray-700">
-                        <span id="video-icon">📷</span>
-                        <span id="video-btn-text">Kamera: ON</span>
+                        <span id="video-icon">🚫</span>
+                        <span id="video-btn-text">Kamera: OFF</span>
                     </button>
                 </div>
                 
-                <p class="text-[10px] text-center text-gray-400 mb-2 font-mono">TAHAN UNTUK BICARA</p>
+                <p class="text-[10px] text-center text-green-400 mb-2 font-mono animate-pulse">BERBICARA BEBAS</p>
                 
-                <!-- Tombol PTT -->
-                <button id="btn-ptt" class="ptt-button w-28 h-28 rounded-full flex items-center justify-center border-4 border-[#111]">
-                    <span class="text-white font-bold text-xl tracking-wider text-shadow-sm">PTT</span>
-                </button>
+                <!-- Open Mic Status Display -->
+                <div class="w-28 h-28 rounded-full flex flex-col items-center justify-center border-4 border-[#111] bg-[#1a1a1a] shadow-[inset_0_4px_10px_rgba(0,0,0,0.6)]">
+                    <span class="text-green-500 font-bold text-2xl animate-pulse">MIC</span>
+                    <span class="text-green-500 text-xs tracking-widest mt-1">LIVE</span>
+                </div>
             </div>
 
             <div class="h-24 w-full speaker-grille rounded-lg border border-gray-900 shadow-[inset_0_2px_10px_rgba(0,0,0,0.8)]"></div>
@@ -320,6 +301,7 @@
         let isCaller = false;
         let unsubscribers = [];
         let audioContext = null;
+        let isVideoEnabled = false;
 
         const configuration = {
             iceServers: [
@@ -334,6 +316,7 @@
             lcdRoomText: document.getElementById('lcd-room'),
             statusIcon: document.getElementById('status-icon'),
             rxIndicator: document.getElementById('rx-indicator'),
+            txIndicator: document.getElementById('tx-indicator'),
             loginPanel: document.getElementById('login-panel'),
             loginCodeInput: document.getElementById('login-code-input'),
             btnLogin: document.getElementById('btn-login'),
@@ -346,7 +329,6 @@
             btnRefreshContacts: document.getElementById('btn-refresh-contacts'),
             contactList: document.getElementById('contact-list'),
             btnHangup: document.getElementById('btn-hangup'),
-            btnPtt: document.getElementById('btn-ptt'),
             btnToggleVideo: document.getElementById('btn-toggle-video'),
             videoIcon: document.getElementById('video-icon'),
             videoBtnText: document.getElementById('video-btn-text'),
@@ -364,7 +346,7 @@
             const { data, error } = await supabase
                 .from('employees')
                 .select('code, name, is_online')
-                .order('is_online', { ascending: false }) // Yang online muncul di atas
+                .order('is_online', { ascending: false })
                 .order('name', { ascending: true });
 
             if (error) {
@@ -373,8 +355,6 @@
             }
 
             ui.contactList.innerHTML = '';
-            
-            // Saring agar tidak menampilkan diri sendiri
             const otherEmployees = data.filter(emp => emp.code !== myId);
             
             if (otherEmployees.length === 0) {
@@ -399,11 +379,7 @@
                     </div>
                 `;
                 
-                // Saat diklik, langsung lakukan panggilan
-                li.onclick = () => {
-                    initiateCall(emp.code);
-                };
-                
+                li.onclick = () => { initiateCall(emp.code); };
                 ui.contactList.appendChild(li);
             });
         }
@@ -430,7 +406,7 @@
             }
         }
 
-        // PROSES LOGIN DARI SUPABASE
+        // PROSES LOGIN
         ui.btnLogin.addEventListener('click', async () => {
             const code = ui.loginCodeInput.value.trim().toUpperCase();
             if(!code) return;
@@ -444,26 +420,22 @@
                 .single();
 
             if (error || !data) {
-                alert("Kode Pegawai tidak ditemukan di Database!");
+                alert("Kode Pegawai tidak ditemukan!");
                 ui.btnLogin.innerText = "MASUK";
                 return;
             }
 
-            // Jika masih terdeteksi online, beri peringatan
             if(data.is_online) {
-                const override = confirm("Akun ini terdeteksi masih aktif di perangkat lain (Atau Anda menutup browser sebelumnya tanpa log out). Tetap paksa masuk?");
+                const override = confirm("Akun ini terdeteksi aktif di perangkat lain. Paksa masuk?");
                 if(!override) {
                     ui.btnLogin.innerText = "MASUK";
                     return;
                 }
             }
 
-            // Set is_online = true
             await supabase.from('employees').update({ is_online: true }).eq('code', code);
-
             localStorage.setItem('walkie_emp_code', data.code);
             localStorage.setItem('walkie_emp_name', data.name);
-            
             ui.loginCodeInput.value = "";
             checkAuth();
         });
@@ -471,7 +443,6 @@
         // PROSES LOGOUT
         async function performLogout() {
             if (myId) {
-                // Set is_online = false di Supabase
                 await supabase.from('employees').update({ is_online: false }).eq('code', myId);
             }
             await cleanupConnection();
@@ -479,7 +450,6 @@
             localStorage.removeItem('walkie_emp_name');
             window.location.reload();
         }
-
         ui.btnLogout.addEventListener('click', performLogout);
 
 
@@ -506,10 +476,8 @@
                 ui.lcd.classList.add('active');
                 
                 startDevice();
-
             } catch (error) {
-                console.error("Firebase init error:", error);
-                alert("Gagal terhubung ke Server Komunikasi: " + error.message);
+                alert("Gagal terhubung: " + error.message);
                 updateLCD("ERR: AUTH", "---", "✖");
             }
         }
@@ -519,45 +487,17 @@
             if (audioContext.state === 'suspended') audioContext.resume();
         }
 
-        function playSfx(type) {
-            if (!audioContext) return;
-            try {
-                const osc = audioContext.createOscillator();
-                const gain = audioContext.createGain();
-                osc.connect(gain);
-                gain.connect(audioContext.destination);
-                const now = audioContext.currentTime;
-
-                if (type === 'tx-start') {
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(800, now);
-                    osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
-                    gain.gain.setValueAtTime(0.1, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-                    osc.start(now);
-                    osc.stop(now + 0.1);
-                } else if (type === 'tx-end') {
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(1200, now);
-                    osc.frequency.setValueAtTime(1200, now + 0.1);
-                    gain.gain.setValueAtTime(0.1, now);
-                    gain.gain.setValueAtTime(0.1, now + 0.1);
-                    osc.start(now);
-                    osc.stop(now + 0.1);
-                }
-            } catch(e) {}
-        }
-
+        // INIT MEDIA (HANYA MIKROFON SAAT DIBUKA)
         async function openUserMedia() {
             try {
+                // Kamera dimatikan di awal, hanya minta mic
                 const constraints = {
-                    video: { facingMode: "user" },
+                    video: false, 
                     audio: { echoCancellation: true, noiseSuppression: true }
                 };
                 localStream = await navigator.mediaDevices.getUserMedia(constraints);
-                ui.localVideo.srcObject = localStream;
-                ui.lcd.classList.add('video-mode');
                 
+                // Mute mic saat Standby
                 localStream.getAudioTracks().forEach(track => { track.enabled = false; });
                 return true;
             } catch (error) {
@@ -583,11 +523,8 @@
             ui.btnForceConnect.classList.add('hidden');
             ui.dialPanel.classList.remove('hidden');
             
-            // Tampilkan kontak segera setelah device siap
             loadContacts();
-
-            // Standby pada ID (Code Pegawai) miliknya sendiri
-            connectToRoom(myId);
+            connectToRoom(myId); // Standby pada ID sendiri
         }
 
         async function connectToRoom(targetRoomId) {
@@ -598,11 +535,8 @@
             
             updateLCD(isMyOwnRoom ? "STANDBY" : "CALLING...", roomId, "⧖");
             
-            if (isMyOwnRoom) {
-                showSetupPanel();
-            } else {
-                showCallPanel(roomId);
-            }
+            if (isMyOwnRoom) showSetupPanel();
+            else showCallPanel(roomId);
 
             const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
             
@@ -629,12 +563,9 @@
                                 handleDisconnect();
                                 return;
                             }
-
                             const data = snapshot.data();
                             if (!peerConnection.currentRemoteDescription && data && data.answer) {
-                                try {
-                                    await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-                                } catch (e) {}
+                                try { await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer)); } catch (e) {}
                             }
                         });
                         unsubscribers.push(unsubRoom);
@@ -652,12 +583,8 @@
                         const unsubCallee = onSnapshot(calleeCandidatesCollection, snapshot => {
                             if (!peerConnection) return;
                             snapshot.docChanges().forEach(async change => {
-                                if (change.type === 'added') {
-                                     if (peerConnection.remoteDescription) {
-                                         try {
-                                            await peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data()));
-                                         } catch(e) {}
-                                     }
+                                if (change.type === 'added' && peerConnection.remoteDescription) {
+                                    try { await peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data())); } catch(e) {}
                                 }
                             });
                         });
@@ -692,12 +619,8 @@
                 const unsubCaller = onSnapshot(callerCandidatesCollection, snapshot => {
                     if (!peerConnection) return;
                     snapshot.docChanges().forEach(async change => {
-                        if (change.type === 'added') {
-                            if (peerConnection.remoteDescription) {
-                                try {
-                                    await peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data()));
-                                } catch(e) {}
-                            }
+                        if (change.type === 'added' && peerConnection.remoteDescription) {
+                            try { await peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data())); } catch(e) {}
                         }
                     });
                 });
@@ -715,7 +638,6 @@
                     await peerConnection.setLocalDescription(answer);
                     await updateDoc(roomRef, { answer: { type: answer.type, sdp: answer.sdp } });
                 }
-
             } catch (err) {
                 handleDisconnect();
             }
@@ -728,6 +650,11 @@
                     ui.remoteVideo.srcObject = remoteStream;
                 }
                 remoteStream.addTrack(event.track);
+                
+                // Jika track yang diterima adalah video, nyalakan layar hitam (Video Mode)
+                if(event.track.kind === 'video') {
+                    ui.lcd.classList.add('video-mode');
+                }
             });
 
             peerConnection.addEventListener('connectionstatechange', () => {
@@ -737,6 +664,11 @@
                     setupAudioLevelMonitor();
                     updateLCD("CONNECTED", roomId, "✔");
                     showCallPanel(roomId);
+                    
+                    // OTOMATIS OPEN MIC SAAT TERHUBUNG (TANPA PTT)
+                    if (localStream) {
+                        localStream.getAudioTracks().forEach(track => { track.enabled = true; });
+                    }
                 }
             });
         }
@@ -758,25 +690,42 @@
                 peerConnection = null;
             }
             
+            // Hentikan Video Track saat Hangup dan hapus dari stream
+            if (localStream) {
+                const videoTracks = localStream.getVideoTracks();
+                videoTracks.forEach(track => {
+                    track.stop();
+                    localStream.removeTrack(track);
+                });
+                
+                // Mute Mic kembali saat kembali ke mode Standby
+                localStream.getAudioTracks().forEach(track => { track.enabled = false; });
+            }
+
             remoteStream = null;
             ui.remoteVideo.srcObject = null;
+            ui.localVideo.srcObject = null;
+            
+            // Matikan UI Kamera
+            isVideoEnabled = false;
+            ui.videoIcon.innerText = "🚫";
+            ui.videoBtnText.innerText = "Kamera: OFF";
+            ui.localVideo.classList.remove('opacity-100');
+            ui.localVideo.classList.add('opacity-0');
+            ui.lcd.classList.remove('video-mode');
+
             ui.rxIndicator.style.opacity = '0';
+            ui.txIndicator.style.opacity = '0';
 
             if (roomId && auth.currentUser) {
-                try {
-                   await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId));
-                } catch(e) {}
+                try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId)); } catch(e) {}
             }
             roomId = null;
             isCaller = false;
         }
 
-        // --- BUTTON ACTIONS ---
-
         async function initiateCall(targetCode) {
             if (targetCode === myId) return;
-
-            // Pastikan kita memutuskan sesi Standby dulu
             await cleanupConnection(); 
             connectToRoom(targetCode);     
         }
@@ -790,71 +739,61 @@
             startDevice();
         });
 
-        // --- PTT & VIDEO LOGIC ---
-
-        let isTransmitting = false;
-
-        function startPTT(e) {
-            e.preventDefault(); 
-            if (!peerConnection || peerConnection.connectionState !== 'connected' || isTransmitting) return;
-            
-            isTransmitting = true;
-            ui.btnPtt.classList.add('pressed');
-            ui.lcd.classList.add('transmitting');
-            
-            playSfx('tx-start');
-            if (localStream) {
-                localStream.getAudioTracks().forEach(track => { track.enabled = true; });
-            }
-        }
-
-        function stopPTT(e) {
-            e.preventDefault();
-            if (!isTransmitting) return;
-
-            isTransmitting = false;
-            ui.btnPtt.classList.remove('pressed');
-            ui.lcd.classList.remove('transmitting');
-
-            if (localStream) {
-                localStream.getAudioTracks().forEach(track => { track.enabled = false; });
-            }
-            playSfx('tx-end');
-        }
-
-        ui.btnPtt.addEventListener('pointerdown', startPTT);
-        ui.btnPtt.addEventListener('pointerup', stopPTT);
-        ui.btnPtt.addEventListener('pointerleave', stopPTT);
-        ui.btnPtt.addEventListener('pointercancel', stopPTT);
-
+        // --- MONITOR AUDIO (Indikator Suara) ---
         function setupAudioLevelMonitor() {
-            if (!audioContext || !remoteStream) return;
-            const source = audioContext.createMediaStreamSource(remoteStream);
-            const analyzer = audioContext.createAnalyser();
-            analyzer.fftSize = 256;
-            source.connect(analyzer);
-            const dataArray = new Uint8Array(analyzer.frequencyBinCount);
+            if (!audioContext) return;
+            
+            // Monitor Suara Lawan (RX)
+            if (remoteStream) {
+                const rxSource = audioContext.createMediaStreamSource(remoteStream);
+                const rxAnalyzer = audioContext.createAnalyser();
+                rxAnalyzer.fftSize = 256;
+                rxSource.connect(rxAnalyzer);
+                const rxData = new Uint8Array(rxAnalyzer.frequencyBinCount);
 
-            function checkLevel() {
-                if (peerConnection && peerConnection.connectionState === 'connected') {
-                    analyzer.getByteFrequencyData(dataArray);
-                    let sum = 0;
-                    for (let i = 0; i < dataArray.length; i++) { sum += dataArray[i]; }
-                    const average = sum / dataArray.length;
-
-                    ui.rxIndicator.style.opacity = (average > 5 && !isTransmitting) ? '1' : '0';
-                    requestAnimationFrame(checkLevel);
-                } else {
-                    ui.rxIndicator.style.opacity = '0';
+                function checkRxLevel() {
+                    if (peerConnection && peerConnection.connectionState === 'connected') {
+                        rxAnalyzer.getByteFrequencyData(rxData);
+                        let sum = 0;
+                        for (let i = 0; i < rxData.length; i++) sum += rxData[i];
+                        ui.rxIndicator.style.opacity = (sum / rxData.length > 5) ? '1' : '0';
+                        requestAnimationFrame(checkRxLevel);
+                    } else {
+                        ui.rxIndicator.style.opacity = '0';
+                    }
                 }
+                checkRxLevel();
             }
-            checkLevel();
+
+            // Monitor Suara Sendiri (TX)
+            if (localStream) {
+                const txSource = audioContext.createMediaStreamSource(localStream);
+                const txAnalyzer = audioContext.createAnalyser();
+                txAnalyzer.fftSize = 256;
+                txSource.connect(txAnalyzer);
+                const txData = new Uint8Array(txAnalyzer.frequencyBinCount);
+
+                function checkTxLevel() {
+                    if (peerConnection && peerConnection.connectionState === 'connected') {
+                        txAnalyzer.getByteFrequencyData(txData);
+                        let sum = 0;
+                        for (let i = 0; i < txData.length; i++) sum += txData[i];
+                        ui.txIndicator.style.opacity = (sum / txData.length > 5) ? '1' : '0';
+                        requestAnimationFrame(checkTxLevel);
+                    } else {
+                        ui.txIndicator.style.opacity = '0';
+                    }
+                }
+                checkTxLevel();
+            }
         }
 
-        let isVideoEnabled = true;
+        // --- TOGGLE KAMERA ---
         ui.btnToggleVideo.addEventListener('click', async () => {
             if (!localStream) return;
+            
             if (isVideoEnabled) {
+                // MATIKAN KAMERA
                 const videoTrack = localStream.getVideoTracks()[0];
                 if (videoTrack) {
                     videoTrack.stop(); 
@@ -863,13 +802,15 @@
                 isVideoEnabled = false;
                 ui.videoIcon.innerText = "🚫";
                 ui.videoBtnText.innerText = "Kamera: OFF";
-                ui.localVideo.classList.add('opacity-20', 'grayscale');
+                ui.localVideo.classList.remove('opacity-100');
+                ui.localVideo.classList.add('opacity-0');
             } else {
+                // NYALAKAN KAMERA
                 try {
                     const newStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
                     const newVideoTrack = newStream.getVideoTracks()[0];
                     localStream.addTrack(newVideoTrack);
-                    ui.localVideo.srcObject = localStream;
+                    ui.localVideo.srcObject = new MediaStream([newVideoTrack]);
                     
                     if (peerConnection) {
                         const sender = peerConnection.getSenders().find(s => s.track && s.track.kind === 'video');
@@ -879,13 +820,16 @@
                     isVideoEnabled = true;
                     ui.videoIcon.innerText = "📷";
                     ui.videoBtnText.innerText = "Kamera: ON";
-                    ui.localVideo.classList.remove('opacity-20', 'grayscale');
-                } catch (error) {}
+                    ui.localVideo.classList.remove('opacity-0');
+                    ui.localVideo.classList.add('opacity-100');
+                    ui.lcd.classList.add('video-mode');
+                } catch (error) {
+                    alert("Kamera gagal diakses atau tidak ada izin.");
+                }
             }
         });
 
         // --- UI TOGGLES ---
-
         function updateLCD(status, roomStr, icon) {
             ui.lcdStatus.innerText = status;
             ui.lcdRoomText.innerText = roomStr || "---";
@@ -896,32 +840,24 @@
             ui.setupPanel.classList.add('hidden');
             ui.callPanel.classList.remove('hidden');
             ui.lcdRoomText.innerText = activeRoomId;
-            if(isVideoEnabled) ui.lcd.classList.add('video-mode');
         }
 
         function showSetupPanel() {
             ui.setupPanel.classList.remove('hidden');
             ui.callPanel.classList.add('hidden');
             ui.lcdRoomText.innerText = myId;
-            ui.lcd.classList.add('video-mode'); 
+            ui.lcd.classList.remove('video-mode'); 
             
-            // Reload contacts setiap kembali ke standby
             if(myId) loadContacts();
         }
 
         // Mulai aplikasi
         checkAuth();
         
-        // Atur agar saat tab ditutup/direfresh, status kembali offline
         window.addEventListener('beforeunload', () => {
-            if (myId) {
-                // Gunakan promise non-blocking untuk update DB sebelum unload
-                supabase.from('employees').update({ is_online: false }).eq('code', myId).then();
-            }
+            if (myId) supabase.from('employees').update({ is_online: false }).eq('code', myId).then();
             cleanupConnection();
-            if (localStream) {
-                localStream.getTracks().forEach(track => track.stop());
-            }
+            if (localStream) localStream.getTracks().forEach(track => track.stop());
         });
     </script>
 </body>
