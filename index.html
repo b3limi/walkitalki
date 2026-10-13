@@ -275,8 +275,7 @@
             <div class="h-24 w-full speaker-grille rounded-lg border border-gray-900 shadow-[inset_0_2px_10px_rgba(0,0,0,0.8)]"></div>
         </div>
     </div>
-
-    <script type="module">
+<script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, updateDoc, deleteDoc, collection, onSnapshot, addDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -348,8 +347,23 @@
             employeeNameDisplay: document.getElementById('employee-name-display')
         };
 
+        // ========================================================
+        // [BARU] FUNGSI MEMBUAT TREK VIDEO PALSU (KAMPAS HITAM)
+        // ========================================================
+        function createEmptyVideoTrack({ width = 640, height = 480 } = {}) {
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const context = canvas.getContext('2d');
+            context.fillStyle = '#000000'; // Layar hitam
+            context.fillRect(0, 0, width, height);
+            
+            // captureStream(1) artinya hanya merender 1 frame per detik (sangat ringan)
+            const stream = canvas.captureStream(1);
+            return stream.getVideoTracks()[0];
+        }
+
         // --- SISTEM DETAK JANTUNG (HEARTBEAT) ---
-        // Tugas ini memastikan Supabase tahu bahwa pengguna benar-benar masih online
         function startHeartbeat() {
             if (heartbeatInterval) clearInterval(heartbeatInterval);
             heartbeatInterval = setInterval(async () => {
@@ -400,8 +414,6 @@
             };
         }
 
-        // --- PEMUATAN DAFTAR KONTAK YANG SUDAH DIBERSIHKAN ---
-        // Karena Server Supabase sekarang bertugas menghapus Zombie, Klien tidak perlu menghitung waktu lagi.
         async function loadContacts() {
             const { data, error } = await supabase
                 .from('employees')
@@ -457,7 +469,6 @@
         });
 
 
-        // --- CEK AUTH / AUTO LOGIN ---
         async function checkAuth() {
             const storedCode = localStorage.getItem('walkie_emp_code');
             const storedName = localStorage.getItem('walkie_emp_name');
@@ -484,7 +495,6 @@
             }
         }
 
-        // --- PROSES LOGIN MANUAL (VALIDASI KETAT) ---
         ui.btnLogin.addEventListener('click', async () => {
             const code = ui.loginCodeInput.value.trim().toUpperCase();
             if(!code) return;
@@ -503,8 +513,6 @@
                 return;
             }
 
-            // Validasi: Tolak login jika belum berstatus 'offline'
-            // (Akun yang nyangkut/zombie akan di-'offline'-kan oleh Supabase Server secara otomatis setiap menit)
             if (data.is_online !== 'offline') {
                 const paksaLogin = confirm("Kode ini sedang AKTIF di perangkat lain.\n(Jika perangkat sebelumnya mati mendadak, tunggu 1-2 menit hingga server membersihkan sesi otomatis). \n\nApakah Anda ingin mencoba memaksa masuk sekarang?");
                 if(!paksaLogin) {
@@ -625,7 +633,7 @@
             else showCallPanel(roomId);
 
             if (!isMyOwnRoom && myId) {
-                await supabase.from('employees').update({ 
+                supabase.from('employees').update({ 
                     is_online: 'busy', 
                     last_seen: new Date().toISOString() 
                 }).eq('code', myId);
@@ -643,7 +651,11 @@
                     });
                 }
                 
-                peerConnection.addTransceiver('video', { direction: 'sendrecv' });
+                // ========================================================
+                // [DIUBAH] Masukkan Dummy Video dari awal agar HP siap
+                // ========================================================
+                const dummyVideoTrack = createEmptyVideoTrack();
+                peerConnection.addTransceiver(dummyVideoTrack, { direction: 'sendrecv' });
 
                 let roomSnap = await getDoc(roomRef);
 
@@ -806,8 +818,9 @@
 
         function handleDisconnect() {
             updateLCD("DROPPED", "---", "✖");
-            setTimeout(async () => {
-                await cleanupConnection();
+            // Jeda 500ms agar UI terasa lebih responsif saat putus
+            setTimeout(() => {
+                cleanupConnection();
                 connectToRoom(myId); 
             }, 500);
         }
@@ -859,7 +872,7 @@
             ui.txIndicator.style.opacity = '0';
 
             if (roomId && auth.currentUser) {
-                try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId)); } catch(e) {}
+                try { deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId)); } catch(e) {}
             }
             roomId = null;
             isCaller = false;
@@ -878,22 +891,26 @@
                 alert("Pegawai ini sedang SIBUK atau OFFLINE!");
                 return;
             }
+            
+            // Tampilan diubah duluan agar interaktif
+            ui.setupPanel.classList.add('hidden');
+            updateLCD("CALLING...", targetCode, "⧖");
 
-            await cleanupConnection(); 
-            connectToRoom(targetCode);     
+            cleanupConnection().then(() => {
+                connectToRoom(targetCode); 
+            });
         }
 
         ui.btnHangup.addEventListener('click', () => {
-    // Ubah UI seketika sebelum memproses backend
-    ui.setupPanel.classList.remove('hidden');
-    ui.callPanel.classList.add('hidden');
-    updateLCD("STANDBY", myId, "✔");
-    
-    // Biarkan cleanup berjalan di latar belakang
-    cleanupConnection().then(() => {
-        connectToRoom(myId); 
-    });
-});
+            // Tampilan dipercepat
+            ui.setupPanel.classList.remove('hidden');
+            ui.callPanel.classList.add('hidden');
+            updateLCD("STANDBY", myId, "✔");
+            
+            cleanupConnection().then(() => {
+                connectToRoom(myId); 
+            });
+        });
 
         ui.btnForceConnect.addEventListener('click', () => {
             startDevice();
@@ -968,10 +985,14 @@
             }
         }
 
+        // ========================================================
+        // [DIUBAH] TOGGLE KAMERA MENGGUNAKAN TREK PALSU SAAT OFF
+        // ========================================================
         ui.btnToggleVideo.addEventListener('click', async () => {
             if (!localStream) return;
             
             if (isVideoEnabled) {
+                // Saat OFF, hapus trek kamera asli
                 const videoTrack = localStream.getVideoTracks()[0];
                 if (videoTrack) {
                     videoTrack.stop(); 
@@ -989,23 +1010,29 @@
                     dataChannel.send(JSON.stringify({ type: 'VIDEO_TOGGLE', state: false }));
                 }
                 
+                // Masukkan kembali layar Hitam ke WebRTC
                 if (peerConnection) {
+                    const dummyTrack = createEmptyVideoTrack();
                     const transceivers = peerConnection.getTransceivers();
                     const videoTransceiver = transceivers.find(t => t.sender && t.sender.track && t.sender.track.kind === 'video');
-                    if (videoTransceiver) videoTransceiver.sender.replaceTrack(null);
+                    if (videoTransceiver) {
+                        videoTransceiver.sender.replaceTrack(dummyTrack);
+                    }
                 }
             } else {
                 try {
+                    // Minta izin kamera
                     const newStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
                     const newVideoTrack = newStream.getVideoTracks()[0];
                     localStream.addTrack(newVideoTrack);
                     ui.localVideo.srcObject = new MediaStream([newVideoTrack]);
                     
+                    // Gantikan layar hitam WebRTC dengan kamera yang asli
                     if (peerConnection) {
                         const transceivers = peerConnection.getTransceivers();
                         let videoTransceiver = transceivers.find(t => t.receiver && t.receiver.track && t.receiver.track.kind === 'video');
                         if (!videoTransceiver) {
-                            videoTransceiver = transceivers.find(t => t.sender && t.sender.track === null);
+                            videoTransceiver = transceivers.find(t => t.sender);
                         }
                         if (videoTransceiver) {
                             await videoTransceiver.sender.replaceTrack(newVideoTrack);
@@ -1086,5 +1113,6 @@
             }
         });
     </script>
+    
 </body>
 </html>
