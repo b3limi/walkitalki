@@ -419,24 +419,22 @@ autoConnect();
 
         // JIKA ROOM SUDAH ADA (JADI JOINER)
         if (roomSnap.exists() && roomSnap.data().offer) {
-            isCaller = false;
-            const roomData = roomSnap.data();
-            
-            const calleeCandidatesCollection = collection(roomRef, 'calleeCandidates');
-            peerConnection.addEventListener('icecandidate', event => {
-                if (event.candidate) addDoc(calleeCandidatesCollection, event.candidate.toJSON());
-            });
+    isCaller = false;
+    const roomData = roomSnap.data();
+    
+    // --- TAMBAHKAN KODE BARU INI ---
+    const unsubRoom = onSnapshot(roomRef, snapshot => {
+        if (!peerConnection) return;
+        if (!snapshot.exists()) {
+            updateLCD("DROPPED", "---", "✖");
+            hangUp();
+            setTimeout(() => window.location.reload(), 1000);
+        }
+    });
+    unsubscribers.push(unsubRoom);
+    // -------------------------------
 
-            await peerConnection.setRemoteDescription(new RTCSessionDescription(roomData.offer));
-            const answer = await peerConnection.createAnswer();
-            await peerConnection.setLocalDescription(answer);
-
-            await updateDoc(roomRef, { answer: { type: answer.type, sdp: answer.sdp } });
-            
-            showCallPanel("CH-1");
-            //updateLCD("CONNECTED", "CH-1", "✔");
-
-            const callerCandidatesCollection = collection(roomRef, 'callerCandidates');
+    const calleeCandidatesCollection = collection(roomRef, 'calleeCandidates');
             const unsubCaller = onSnapshot(callerCandidatesCollection, snapshot => {
                 if (!peerConnection) return;
                 snapshot.docChanges().forEach(async change => {
@@ -619,12 +617,11 @@ autoConnect();
             ui.localVideo.srcObject = null;
             ui.lcd.classList.remove('video-mode');
 
-            if (isCaller && roomId && auth.currentUser) {
-                try {
-                   await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId));
-                } catch(e) {}
-            }
-
+           if (roomId && auth.currentUser) {
+    try {
+       await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId));
+    } catch(e) {}
+}
             roomId = null;
             isCaller = false;
             
