@@ -263,7 +263,7 @@
         let isCaller = false;
         let unsubscribers = [];
         let audioContext = null;
-        const FIXED_ROOM_ID = "SALURAN_UTAMA_01"; // ID ini yang akan selalu dipakai
+        const FIXED_ROOM_ID = "SALURAN_UTAMA_03"; // ID ini yang akan selalu dipakai
 
         const configuration = {
             iceServers: [
@@ -434,7 +434,7 @@ autoConnect();
             await updateDoc(roomRef, { answer: { type: answer.type, sdp: answer.sdp } });
             
             showCallPanel("CH-1");
-            updateLCD("CONNECTED", "CH-1", "✔");
+            //updateLCD("CONNECTED", "CH-1", "✔");
 
             const callerCandidatesCollection = collection(roomRef, 'callerCandidates');
             const unsubCaller = onSnapshot(callerCandidatesCollection, snapshot => {
@@ -469,7 +469,7 @@ autoConnect();
                 const data = snapshot.data();
                 if (!peerConnection.currentRemoteDescription && data && data.answer) {
                     await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-                    updateLCD("CONNECTED", "CH-1", "✔");
+                    //updateLCD("CONNECTED", "CH-1", "✔");
                 }
             });
             unsubscribers.push(unsubRoom);
