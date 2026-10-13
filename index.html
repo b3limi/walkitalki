@@ -17,7 +17,7 @@
             min-height: 100vh;
             margin: 0;
             font-family: 'Inter', sans-serif;
-            touch-action: pan-y; /* Optimal untuk mobile: cegah zoom layar tapi izinkan scroll */
+            touch-action: pan-y;
             -webkit-tap-highlight-color: transparent;
         }
 
@@ -169,7 +169,6 @@
             text-shadow: 0 0 5px red;
         }
 
-        /* Styling native button untuk HP */
         button {
             touch-action: manipulation;
         }
@@ -219,8 +218,10 @@
 
             <!-- Active Call Controls -->
             <div id="call-panel" class="hidden mb-6 flex flex-col items-center">
-                <button id="btn-copy" class="mb-4 text-xs bg-gray-800 text-gray-300 py-1 px-3 rounded shadow border border-gray-700 hover:text-white active:bg-gray-700">
-                    Copy Room ID
+                <!-- Tombol Refresh Room menggantikan Copy ID -->
+                <button id="btn-refresh" class="mb-4 text-xs bg-red-900 text-gray-300 py-1.5 px-4 rounded shadow border border-red-800 hover:text-white hover:bg-red-800 active:bg-red-700 transition-colors flex items-center justify-center space-x-1">
+                    <span>🔄</span>
+                    <span>Refresh Room</span>
                 </button>
                 
                 <div class="flex space-x-2 mb-3">
@@ -275,7 +276,7 @@
             setupPanel: document.getElementById('setup-panel'),
             callPanel: document.getElementById('call-panel'),
             btnPtt: document.getElementById('btn-ptt'),
-            btnCopy: document.getElementById('btn-copy'),
+            btnRefresh: document.getElementById('btn-refresh'),
             btnToggleVideo: document.getElementById('btn-toggle-video'),
             videoIcon: document.getElementById('video-icon'),
             videoBtnText: document.getElementById('video-btn-text'),
@@ -372,49 +373,101 @@
             }
         }
 
-      async function autoConnect() {
-    if (!auth.currentUser) return;
+        async function autoConnect() {
+            if (!auth.currentUser) return;
 
-    initAudioContext();
+            initAudioContext();
 
-    if (!localStream) {
-        updateLCD("MINTA IZIN", "...", "⧖");
-        const hasMedia = await openUserMedia();
-        if (!hasMedia) {
-            document.getElementById('auto-connect-msg').classList.add('hidden');
-            document.getElementById('btn-force-connect').classList.remove('hidden');
-            updateLCD("BUTUH TAP", "---", "✖");
-            return;
-        }
-    }
+            if (!localStream) {
+                updateLCD("MINTA IZIN", "...", "⧖");
+                const hasMedia = await openUserMedia();
+                if (!hasMedia) {
+                    document.getElementById('auto-connect-msg').classList.add('hidden');
+                    document.getElementById('btn-force-connect').classList.remove('hidden');
+                    updateLCD("BUTUH TAP", "---", "✖");
+                    return;
+                }
+            }
 
-    updateLCD("CONNECTING", "CH-1", "⧖");
-    roomId = FIXED_ROOM_ID;
-    const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
-    
-    try {
-        peerConnection = new RTCPeerConnection(configuration);
-        setupWebRTCListeners();
-        
-        localStream.getTracks().forEach(track => {
-            peerConnection.addTrack(track, localStream);
-        });
-
-        // COBA KLAIM RUANGAN ATAU CEK APAKAH SUDAH ADA
-        // Kita gunakan pendekatan loop singkat / pengecekan pasti
-        let roomSnap = await getDoc(roomRef);
-
-        // Jika ruangan belum ada, coba buat sebagai Creator
-        if (!roomSnap.exists()) {
+            updateLCD("CONNECTING", "CH-1", "⧖");
+            roomId = FIXED_ROOM_ID;
+            const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
+            
             try {
-                // Coba buat dokumen baru. Jika keduluan device lain, catch akan menangkapnya.
-                await setDoc(roomRef, { createdAt: new Date().toISOString(), creator: auth.currentUser.uid });
+                peerConnection = new RTCPeerConnection(configuration);
+                setupWebRTCListeners();
                 
-                // BERHASIL MENJADI CREATOR
-                isCaller = true;
-                
+                localStream.getTracks().forEach(track => {
+                    peerConnection.addTrack(track, localStream);
+                });
+
+                let roomSnap = await getDoc(roomRef);
+
+                // CREATOR MODE
+                if (!roomSnap.exists()) {
+                    try {
+                        await setDoc(roomRef, { createdAt: new Date().toISOString(), creator: auth.currentUser.uid });
+                        
+                        isCaller = true;
+                        
+                        const unsubRoom = onSnapshot(roomRef, async snapshot => {
+                            if (!peerConnection) return; 
+                            if (!snapshot.exists()) {
+                                updateLCD("DROPPED", "---", "✖");
+                                hangUp();
+                                setTimeout(() => window.location.reload(), 1000);
+                                return;
+                            }
+
+                            const data = snapshot.data();
+                            if (!peerConnection.currentRemoteDescription && data && data.answer) {
+                                try {
+                                    await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+                                } catch (e) { console.error("Error setting remote desc", e); }
+                            }
+                        });
+                        unsubscribers.push(unsubRoom);
+
+                        const callerCandidatesCollection = collection(roomRef, 'callerCandidates');
+                        peerConnection.addEventListener('icecandidate', event => {
+                            if (event.candidate) addDoc(callerCandidatesCollection, event.candidate.toJSON());
+                        });
+
+                        const offer = await peerConnection.createOffer();
+                        await peerConnection.setLocalDescription(offer);
+                        await updateDoc(roomRef, { offer: { type: offer.type, sdp: offer.sdp } });
+                        
+                        showCallPanel("CH-1");
+                        updateLCD("WAITING", "CH-1", "⧖");
+
+                        const calleeCandidatesCollection = collection(roomRef, 'calleeCandidates');
+                        const unsubCallee = onSnapshot(calleeCandidatesCollection, snapshot => {
+                            if (!peerConnection) return;
+                            snapshot.docChanges().forEach(async change => {
+                                if (change.type === 'added') {
+                                     if (peerConnection.remoteDescription) {
+                                         try {
+                                            await peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data()));
+                                         } catch(e) { console.error("Error adding candidate", e); }
+                                     }
+                                }
+                            });
+                        });
+                        unsubscribers.push(unsubCallee);
+                        return; 
+
+                    } catch (createErr) {
+                        roomSnap = await getDoc(roomRef);
+                    }
+                }
+
+                // JOINER MODE
+                isCaller = false;
+                showCallPanel("CH-1");
+                updateLCD("CONNECTING", "CH-1", "⧖");
+
                 const unsubRoom = onSnapshot(roomRef, async snapshot => {
-                    if (!peerConnection) return; 
+                    if (!peerConnection) return;
                     if (!snapshot.exists()) {
                         updateLCD("DROPPED", "---", "✖");
                         hangUp();
@@ -422,113 +475,54 @@
                         return;
                     }
 
-                    const data = snapshot.data();
-                    if (!peerConnection.currentRemoteDescription && data && data.answer) {
+                    const roomData = snapshot.data();
+                    if (roomData.offer && !peerConnection.currentRemoteDescription) {
                         try {
-                            await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-                        } catch (e) { console.error("Error setting remote desc", e); }
+                            await peerConnection.setRemoteDescription(new RTCSessionDescription(roomData.offer));
+                            const answer = await peerConnection.createAnswer();
+                            await peerConnection.setLocalDescription(answer);
+                            await updateDoc(roomRef, { answer: { type: answer.type, sdp: answer.sdp } });
+                            updateLCD("CONNECTED", "CH-1", "✔");
+                        } catch(e) { console.error("Error setting answer", e); }
                     }
                 });
                 unsubscribers.push(unsubRoom);
 
                 const callerCandidatesCollection = collection(roomRef, 'callerCandidates');
-                peerConnection.addEventListener('icecandidate', event => {
-                    if (event.candidate) addDoc(callerCandidatesCollection, event.candidate.toJSON());
-                });
-
-                const offer = await peerConnection.createOffer();
-                await peerConnection.setLocalDescription(offer);
-                await updateDoc(roomRef, { offer: { type: offer.type, sdp: offer.sdp } });
-                
-                showCallPanel("CH-1");
-                updateLCD("WAITING", "CH-1", "⧖");
-
-                const calleeCandidatesCollection = collection(roomRef, 'calleeCandidates');
-                const unsubCallee = onSnapshot(calleeCandidatesCollection, snapshot => {
+                const unsubCaller = onSnapshot(callerCandidatesCollection, snapshot => {
                     if (!peerConnection) return;
                     snapshot.docChanges().forEach(async change => {
                         if (change.type === 'added') {
-                             if (peerConnection.remoteDescription) {
-                                 try {
+                            if (peerConnection.remoteDescription) {
+                                try {
                                     await peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data()));
-                                 } catch(e) { console.error("Error adding candidate", e); }
-                             }
+                                } catch(e) { console.error("Error adding candidate", e); }
+                            }
                         }
                     });
                 });
-                unsubscribers.push(unsubCallee);
-                return; // Selesai sebagai creator
+                unsubscribers.push(unsubCaller);
 
-            } catch (createErr) {
-                // Jika gagal membuat karena keduluan perangkat lain, otomatis lanjut ke mode Joiner di bawah
-                roomSnap = await getDoc(roomRef);
-            }
-        }
+                const calleeCandidatesCollection = collection(roomRef, 'calleeCandidates');
+                peerConnection.addEventListener('icecandidate', event => {
+                    if (event.candidate) addDoc(calleeCandidatesCollection, event.candidate.toJSON());
+                });
 
-        // JIKA RUANGAN SUDAH ADA (MENJADI JOINER / PENERIMA)
-        isCaller = false;
-        showCallPanel("CH-1");
-        updateLCD("CONNECTING", "CH-1", "⧖");
-
-        const unsubRoom = onSnapshot(roomRef, async snapshot => {
-            if (!peerConnection) return;
-            if (!snapshot.exists()) {
-                updateLCD("DROPPED", "---", "✖");
-                hangUp();
-                setTimeout(() => window.location.reload(), 1000);
-                return;
-            }
-
-            const roomData = snapshot.data();
-            // Jika offer sudah ada dan kita belum set remote description
-            if (roomData.offer && !peerConnection.currentRemoteDescription) {
-                try {
+                if (roomSnap.exists() && roomSnap.data().offer && !peerConnection.currentRemoteDescription) {
+                    const roomData = roomSnap.data();
                     await peerConnection.setRemoteDescription(new RTCSessionDescription(roomData.offer));
                     const answer = await peerConnection.createAnswer();
                     await peerConnection.setLocalDescription(answer);
                     await updateDoc(roomRef, { answer: { type: answer.type, sdp: answer.sdp } });
                     updateLCD("CONNECTED", "CH-1", "✔");
-                } catch(e) { console.error("Error setting answer", e); }
-            }
-        });
-        unsubscribers.push(unsubRoom);
-
-        const callerCandidatesCollection = collection(roomRef, 'callerCandidates');
-        const unsubCaller = onSnapshot(callerCandidatesCollection, snapshot => {
-            if (!peerConnection) return;
-            snapshot.docChanges().forEach(async change => {
-                if (change.type === 'added') {
-                    if (peerConnection.remoteDescription) {
-                        try {
-                            await peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data()));
-                        } catch(e) { console.error("Error adding candidate", e); }
-                    }
                 }
-            });
-        });
-        unsubscribers.push(unsubCaller);
 
-        const calleeCandidatesCollection = collection(roomRef, 'calleeCandidates');
-        peerConnection.addEventListener('icecandidate', event => {
-            if (event.candidate) addDoc(calleeCandidatesCollection, event.candidate.toJSON());
-        });
-
-        // Jika saat joiner masuk offer belum ada, tunggu sebentar sampai offer tersedia dari creator
-        if (roomSnap.exists() && roomSnap.data().offer && !peerConnection.currentRemoteDescription) {
-            const roomData = roomSnap.data();
-            await peerConnection.setRemoteDescription(new RTCSessionDescription(roomData.offer));
-            const answer = await peerConnection.createAnswer();
-            await peerConnection.setLocalDescription(answer);
-            await updateDoc(roomRef, { answer: { type: answer.type, sdp: answer.sdp } });
-            updateLCD("CONNECTED", "CH-1", "✔");
+            } catch (err) {
+                console.error("Gagal koneksi:", err);
+                alert("Gagal koneksi: " + err.message);
+                hangUp();
+            }
         }
-
-    } catch (err) {
-        console.error("Gagal koneksi:", err);
-        alert("Gagal koneksi: " + err.message);
-        hangUp();
-    }
-}
 
         function setupWebRTCListeners() {
             peerConnection.addEventListener('track', event => {
@@ -669,25 +663,23 @@
             autoConnect();
         });
 
-        ui.btnCopy.addEventListener('click', () => {
-            const shortId = ui.lcdRoomText.innerText;
-            if (shortId && shortId !== '---') {
-                navigator.clipboard.writeText(shortId).then(() => {
-                    const originalText = ui.btnCopy.innerText;
-                    ui.btnCopy.innerText = "Copied!";
-                    setTimeout(() => ui.btnCopy.innerText = originalText, 2000);
-                }).catch(e => {
-                    const el = document.createElement('textarea');
-                    el.value = shortId;
-                    document.body.appendChild(el);
-                    el.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(el);
-                    const originalText = ui.btnCopy.innerText;
-                    ui.btnCopy.innerText = "Copied!";
-                    setTimeout(() => ui.btnCopy.innerText = originalText, 2000);
-                });
+        // Event Listener untuk tombol Refresh
+        ui.btnRefresh.addEventListener('click', async () => {
+            ui.btnRefresh.disabled = true;
+            ui.btnRefresh.innerText = "Mereset...";
+            updateLCD("RESETTING", "---", "⧖");
+            
+            try {
+                // Hapus data secara eksplisit dari Firestore untuk memutus semua client
+                const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', FIXED_ROOM_ID);
+                await deleteDoc(roomRef);
+            } catch (error) {
+                console.error("Gagal reset room:", error);
             }
+            
+            // Reload segera agar pengguna ini bisa melakukan koneksi duluan
+            // (Client lain akan terputus dan reload setelah delay snapshot)
+            window.location.reload();
         });
 
         let isVideoEnabled = true;
@@ -728,7 +720,6 @@
             }
         });
 
-        // Jalankan aplikasi
         initApp();
         
         window.addEventListener('beforeunload', () => {
