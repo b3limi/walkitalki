@@ -376,7 +376,6 @@
                 const li = document.createElement('li');
                 li.className = 'bg-[#1a1a1a] p-2 rounded border border-gray-700 flex justify-between items-center cursor-pointer hover:border-green-500 hover:bg-[#222] transition-colors';
                 
-                // Pengecekan status berdasarkan teks pada kolom is_online
                 let statusText = 'OFF';
                 let dotColor = 'text-gray-600';
 
@@ -405,8 +404,8 @@
 
         ui.btnRefreshContacts.addEventListener('click', loadContacts);
 
-        // CEK LOGIN
-        function checkAuth() {
+        // CEK LOGIN (Diubah menjadi Async)
+        async function checkAuth() {
             const storedCode = localStorage.getItem('walkie_emp_code');
             const storedName = localStorage.getItem('walkie_emp_name');
 
@@ -418,6 +417,10 @@
                 
                 ui.loginPanel.classList.add('hidden');
                 ui.setupPanel.classList.remove('hidden');
+                
+                // Setel otomatis ke 'online' jika langsung masuk (Auto Login)
+                await supabase.from('employees').update({ is_online: 'online' }).eq('code', myId);
+                
                 initFirebaseApp();
             } else {
                 ui.powerLed.classList.add('bg-red-900');
@@ -452,7 +455,6 @@
                 }
             }
 
-            // Setel is_online ke 'online' saat berhasil login
             await supabase.from('employees').update({ is_online: 'online' }).eq('code', code);
             localStorage.setItem('walkie_emp_code', data.code);
             localStorage.setItem('walkie_emp_name', data.name);
@@ -463,7 +465,6 @@
         // PROSES LOGOUT
         async function performLogout() {
             if (myId) {
-                // Setel is_online ke 'offline' saat logout
                 await supabase.from('employees').update({ is_online: 'offline' }).eq('code', myId);
             }
             await cleanupConnection();
@@ -472,7 +473,6 @@
             window.location.reload();
         }
         ui.btnLogout.addEventListener('click', performLogout);
-
 
         // INISIALISASI FIREBASE
         async function initFirebaseApp() {
@@ -508,7 +508,7 @@
             if (audioContext.state === 'suspended') audioContext.resume();
         }
 
-        // INIT MEDIA (HANYA MIKROFON SAAT DIBUKA)
+        // INIT MEDIA
         async function openUserMedia() {
             try {
                 const constraints = {
@@ -517,7 +517,6 @@
                 };
                 localStream = await navigator.mediaDevices.getUserMedia(constraints);
                 
-                // Mute mic saat Standby
                 localStream.getAudioTracks().forEach(track => { track.enabled = false; });
                 return true;
             } catch (error) {
@@ -544,7 +543,7 @@
             ui.dialPanel.classList.remove('hidden');
             
             loadContacts();
-            connectToRoom(myId); // Standby pada ID sendiri
+            connectToRoom(myId); 
         }
 
         async function connectToRoom(targetRoomId) {
@@ -684,16 +683,13 @@
                     updateLCD("CONNECTED", roomId, "✔");
                     showCallPanel(roomId);
                     
-                    // Ubah status is_online menjadi 'busy' saat panggilan tersambung
                     if (myId) {
                         supabase.from('employees').update({ is_online: 'busy' }).eq('code', myId);
                     }
                     
-                    // OTOMATIS OPEN MIC SAAT TERHUBUNG
                     if (localStream) {
                         localStream.getAudioTracks().forEach(track => { track.enabled = true; });
                         
-                        // Setel ulang UI mic ke ON
                         isMicEnabled = true;
                         ui.micIcon.innerText = "🎙️";
                         ui.micBtnText.innerText = "Mic: ON";
@@ -722,12 +718,10 @@
                 peerConnection = null;
             }
             
-            // Kembalikan status is_online menjadi 'online' saat panggilan ditutup
             if (myId) {
                 supabase.from('employees').update({ is_online: 'online' }).eq('code', myId);
             }
 
-            // Hentikan Video Track saat Hangup
             if (localStream) {
                 const videoTracks = localStream.getVideoTracks();
                 videoTracks.forEach(track => {
@@ -735,7 +729,6 @@
                     localStream.removeTrack(track);
                 });
                 
-                // Mute Mic kembali saat kembali ke mode Standby
                 localStream.getAudioTracks().forEach(track => { track.enabled = false; });
             }
 
@@ -743,7 +736,6 @@
             ui.remoteVideo.srcObject = null;
             ui.localVideo.srcObject = null;
             
-            // Matikan UI Kamera
             isVideoEnabled = false;
             ui.videoIcon.innerText = "🚫";
             ui.videoBtnText.innerText = "Kamera: OFF";
@@ -911,10 +903,31 @@
         // Mulai aplikasi
         checkAuth();
         
+        // --- EVENT LISTENER KONEKSI TERPUTUS / TERTUTUP ---
+
+        // Deteksi jika pengguna menutup tab peramban atau keluar aplikasi
         window.addEventListener('beforeunload', () => {
             if (myId) supabase.from('employees').update({ is_online: 'offline' }).eq('code', myId).then();
             cleanupConnection();
             if (localStream) localStream.getTracks().forEach(track => track.stop());
+        });
+
+        // Deteksi koneksi internet terputus (Hilang sinyal jaringan)
+        window.addEventListener('offline', () => {
+            if (myId) {
+                supabase.from('employees').update({ is_online: 'offline' }).eq('code', myId);
+                updateLCD("NO NET", "...", "✖");
+            }
+        });
+
+        // Deteksi jika jaringan internet kembali terhubung
+        window.addEventListener('online', () => {
+            if (myId) {
+                // Kembalikan ke 'busy' jika sedang tersambung pada panggilan, jika tidak kembalikan ke 'online'
+                const status = (peerConnection && peerConnection.connectionState === 'connected') ? 'busy' : 'online';
+                supabase.from('employees').update({ is_online: status }).eq('code', myId);
+                updateLCD(status === 'busy' ? "CONNECTED" : "STANDBY", roomId || myId, "✔");
+            }
         });
     </script>
 </body>
