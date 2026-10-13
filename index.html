@@ -386,7 +386,7 @@ autoConnect();
             }
         }
 
-      async function autoConnect() {
+   async function autoConnect() {
     if (!auth.currentUser) return;
 
     // Inisialisasi Audio (mungkin butuh interaksi user)
@@ -409,6 +409,9 @@ autoConnect();
     const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
     
     try {
+        // --- PERBAIKAN 1: Jeda acak (100-800ms) untuk mencegah tabrakan milidetik ---
+        await new Promise(resolve => setTimeout(resolve, Math.random() * 700 + 100));
+
         const roomSnap = await getDoc(roomRef);
         peerConnection = new RTCPeerConnection(configuration);
         setupWebRTCListeners();
@@ -417,89 +420,116 @@ autoConnect();
             peerConnection.addTrack(track, localStream);
         });
 
-        // JIKA ROOM SUDAH ADA (JADI JOINER)
-        if (roomSnap.exists() && roomSnap.data().offer) {
+        // JIKA ROOM SUDAH ADA (JADI JOINER / PENERIMA)
+        // --- PERBAIKAN 2: Hanya cek apakah room ada, tak peduli offer sudah siap atau belum ---
+        if (roomSnap.exists()) {
             isCaller = false;
-            const roomData = roomSnap.data();
-
-            const unsubRoom = onSnapshot(roomRef, snapshot => {
-        if (!peerConnection) return;
-        if (!snapshot.exists()) {
-            updateLCD("DROPPED", "---", "✖");
-            hangUp();
-            setTimeout(() => window.location.reload(), 1000);
-        }
-    });
-    unsubscribers.push(unsubRoom);
             
+            // 1. Pantau ruangan terus-menerus
+            const unsubRoom = onSnapshot(roomRef, async snapshot => {
+                if (!peerConnection) return;
+                
+                if (!snapshot.exists()) {
+                    updateLCD("DROPPED", "---", "✖");
+                    hangUp();
+                    setTimeout(() => window.location.reload(), 1000);
+                    return;
+                }
+
+                const roomData = snapshot.data();
+                // Jika data offer akhirnya muncul dan kita belum memprosesnya, baru kita proses
+                if (roomData.offer && !peerConnection.currentRemoteDescription) {
+                    try {
+                        await peerConnection.setRemoteDescription(new RTCSessionDescription(roomData.offer));
+                        const answer = await peerConnection.createAnswer();
+                        await peerConnection.setLocalDescription(answer);
+                        await updateDoc(roomRef, { answer: { type: answer.type, sdp: answer.sdp } });
+                        showCallPanel("CH-1");
+                    } catch(e) { console.error("Error setting answer", e); }
+                }
+            });
+            unsubscribers.push(unsubRoom);
+
+            // 2. Pantau jalur jaringan (ICE) dari Caller
+            const callerCandidatesCollection = collection(roomRef, 'callerCandidates');
+            const unsubCaller = onSnapshot(callerCandidatesCollection, snapshot => {
+                if (!peerConnection) return;
+                snapshot.docChanges().forEach(async change => {
+                    if (change.type === 'added') {
+                        if (peerConnection.remoteDescription) {
+                            try {
+                                await peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data()));
+                            } catch(e) { console.error("Error adding candidate", e); }
+                        }
+                    }
+                });
+            });
+            unsubscribers.push(unsubCaller);
+
+            // 3. Kirim jalur jaringan (ICE) kita ke Caller
             const calleeCandidatesCollection = collection(roomRef, 'calleeCandidates');
             peerConnection.addEventListener('icecandidate', event => {
                 if (event.candidate) addDoc(calleeCandidatesCollection, event.candidate.toJSON());
             });
 
-            await peerConnection.setRemoteDescription(new RTCSessionDescription(roomData.offer));
-            const answer = await peerConnection.createAnswer();
-            await peerConnection.setLocalDescription(answer);
-
-            await updateDoc(roomRef, { answer: { type: answer.type, sdp: answer.sdp } });
-            
-            showCallPanel("CH-1");
-            //updateLCD("CONNECTED", "CH-1", "✔");
-
-            const callerCandidatesCollection = collection(roomRef, 'callerCandidates');
-            const unsubCaller = onSnapshot(callerCandidatesCollection, snapshot => {
-                if (!peerConnection) return;
-                snapshot.docChanges().forEach(async change => {
-                    if (change.type === 'added') await peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data()));
-                });
-            });
-            unsubscribers.push(unsubCaller);
-
         } 
-        // JIKA ROOM BELUM ADA (JADI CREATOR)
+        // JIKA ROOM BELUM ADA (JADI CREATOR / PEMBUAT)
         else {
             isCaller = true;
             await setDoc(roomRef, { createdAt: new Date().toISOString() });
 
+            // 1. Pantau jawaban dari Joiner dan cek jika ruangan dihapus
+            const unsubRoom = onSnapshot(roomRef, async snapshot => {
+                if (!peerConnection) return; 
+                
+                if (!snapshot.exists()) {
+                    updateLCD("DROPPED", "---", "✖");
+                    hangUp();
+                    setTimeout(() => window.location.reload(), 1000);
+                    return;
+                }
+
+                const data = snapshot.data();
+                if (!peerConnection.currentRemoteDescription && data && data.answer) {
+                    try {
+                        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+                    } catch (e) { console.error("Error setting remote desc", e); }
+                }
+            });
+            unsubscribers.push(unsubRoom);
+
+            // 2. Kirim jalur jaringan (ICE) kita ke Joiner
             const callerCandidatesCollection = collection(roomRef, 'callerCandidates');
             peerConnection.addEventListener('icecandidate', event => {
                 if (event.candidate) addDoc(callerCandidatesCollection, event.candidate.toJSON());
             });
 
+            // 3. Buat Penawaran (Offer)
             const offer = await peerConnection.createOffer();
             await peerConnection.setLocalDescription(offer);
-
             await updateDoc(roomRef, { offer: { type: offer.type, sdp: offer.sdp } });
             
             showCallPanel("CH-1");
             updateLCD("WAITING", "CH-1", "⧖");
 
-            const unsubRoom = onSnapshot(roomRef, async snapshot => {
-                if (!peerConnection) return; 
-                if (!snapshot.exists()) {
-        updateLCD("DROPPED", "---", "✖");
-        hangUp();
-        setTimeout(() => window.location.reload(), 1000);
-        return;
-    }
-                const data = snapshot.data();
-                if (!peerConnection.currentRemoteDescription && data && data.answer) {
-                    await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-                    //updateLCD("CONNECTED", "CH-1", "✔");
-                }
-            });
-            unsubscribers.push(unsubRoom);
-
+            // 4. Pantau jalur jaringan (ICE) dari Joiner
             const calleeCandidatesCollection = collection(roomRef, 'calleeCandidates');
             const unsubCallee = onSnapshot(calleeCandidatesCollection, snapshot => {
                 if (!peerConnection) return;
                 snapshot.docChanges().forEach(async change => {
-                    if (change.type === 'added') await peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data()));
+                    if (change.type === 'added') {
+                         if (peerConnection.remoteDescription) {
+                             try {
+                                await peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data()));
+                             } catch(e) { console.error("Error adding candidate", e); }
+                         }
+                    }
                 });
             });
             unsubscribers.push(unsubCallee);
         }
     } catch (err) {
+        console.error("Gagal koneksi:", err);
         alert("Gagal koneksi: " + err.message);
         hangUp();
     }
