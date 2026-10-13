@@ -308,6 +308,11 @@
         let audioContext = null;
         let isVideoEnabled = false;
         let isMicEnabled = true;
+        
+        // --- Variabel Baru ---
+        let dataChannel = null;
+        let isRemoteVideoEnabled = false;
+        let contactsSubscription = null; // Variabel penyimpan koneksi realtime
 
         const configuration = {
             iceServers: [
@@ -350,10 +355,48 @@
             employeeNameDisplay: document.getElementById('employee-name-display')
         };
 
+        // --- FUNGSI BERLANGGANAN PERUBAHAN STATUS REAL-TIME (BARU) ---
+        function subscribeToEmployeeStatus() {
+            if (contactsSubscription) return; // Cegah duplikasi listener
+            
+            contactsSubscription = supabase
+                .channel('employee-status-changes')
+                .on(
+                    'postgres_changes',
+                    { event: 'UPDATE', schema: 'public', table: 'employees' },
+                    (payload) => {
+                        // Jalankan pembaruan list otomatis saat ada record yang di-update
+                        loadContacts();
+                    }
+                )
+                .subscribe();
+        }
+
+        // --- FUNGSI UPDATE LAYAR VIDEO BERSAMA ---
+        function updateVideoModeUI() {
+            if (isVideoEnabled || isRemoteVideoEnabled) {
+                ui.lcd.classList.add('video-mode');
+            } else {
+                ui.lcd.classList.remove('video-mode');
+            }
+        }
+
+        // --- SETUP DATA CHANNEL UNTUK SINYAL UI KAMERA ---
+        function setupDataChannel(channel) {
+            channel.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.type === 'VIDEO_TOGGLE') {
+                        isRemoteVideoEnabled = data.state;
+                        updateVideoModeUI();
+                    }
+                } catch(e) {}
+            };
+        }
+
         // FUNGSI MEMUAT DAFTAR KONTAK
         async function loadContacts() {
-            ui.contactList.innerHTML = '<li class="text-center text-[10px] text-gray-600 py-4">Memuat data...</li>';
-            
+            // Hindari teks berkedip jika memuat ulang dengan cepat
             const { data, error } = await supabase
                 .from('employees')
                 .select('code, name, is_online')
@@ -402,9 +445,12 @@
             });
         }
 
-        ui.btnRefreshContacts.addEventListener('click', loadContacts);
+        ui.btnRefreshContacts.addEventListener('click', () => {
+            ui.contactList.innerHTML = '<li class="text-center text-[10px] text-gray-600 py-4">Memuat data...</li>';
+            loadContacts();
+        });
 
-        // CEK LOGIN (Diubah menjadi Async)
+        // CEK LOGIN 
         async function checkAuth() {
             const storedCode = localStorage.getItem('walkie_emp_code');
             const storedName = localStorage.getItem('walkie_emp_name');
@@ -418,9 +464,7 @@
                 ui.loginPanel.classList.add('hidden');
                 ui.setupPanel.classList.remove('hidden');
                 
-                // Setel otomatis ke 'online' jika langsung masuk (Auto Login)
                 await supabase.from('employees').update({ is_online: 'online' }).eq('code', myId);
-                
                 initFirebaseApp();
             } else {
                 ui.powerLed.classList.add('bg-red-900');
@@ -464,9 +508,16 @@
 
         // PROSES LOGOUT
         async function performLogout() {
+            // Hentikan listener realtime
+            if (contactsSubscription) {
+                supabase.removeChannel(contactsSubscription);
+                contactsSubscription = null;
+            }
+            
             if (myId) {
                 await supabase.from('employees').update({ is_online: 'offline' }).eq('code', myId);
             }
+            
             await cleanupConnection();
             localStorage.removeItem('walkie_emp_code');
             localStorage.removeItem('walkie_emp_name');
@@ -542,7 +593,11 @@
             ui.btnForceConnect.classList.add('hidden');
             ui.dialPanel.classList.remove('hidden');
             
-            loadContacts();
+            await loadContacts();
+            
+            // Nyalakan koneksi realtime untuk menyegarkan daftar secara otomatis
+            subscribeToEmployeeStatus(); 
+            
             connectToRoom(myId); 
         }
 
@@ -568,6 +623,8 @@
                         peerConnection.addTrack(track, localStream);
                     });
                 }
+                
+                peerConnection.addTransceiver('video', { direction: 'sendrecv' });
 
                 let roomSnap = await getDoc(roomRef);
 
@@ -575,6 +632,9 @@
                     try {
                         await setDoc(roomRef, { createdAt: new Date().toISOString(), creator: auth.currentUser.uid });
                         isCaller = true;
+                        
+                        dataChannel = peerConnection.createDataChannel("signaling");
+                        setupDataChannel(dataChannel);
                         
                         const unsubRoom = onSnapshot(roomRef, async snapshot => {
                             if (!peerConnection) return; 
@@ -663,15 +723,19 @@
         }
 
         function setupWebRTCListeners() {
+            peerConnection.addEventListener('datachannel', event => {
+                dataChannel = event.channel;
+                setupDataChannel(dataChannel);
+            });
+
             peerConnection.addEventListener('track', event => {
                 if (!remoteStream) {
                     remoteStream = new MediaStream();
                     ui.remoteVideo.srcObject = remoteStream;
                 }
-                remoteStream.addTrack(event.track);
                 
-                if(event.track.kind === 'video') {
-                    ui.lcd.classList.add('video-mode');
+                if (!remoteStream.getTracks().find(t => t.id === event.track.id)) {
+                    remoteStream.addTrack(event.track);
                 }
             });
 
@@ -713,6 +777,12 @@
             unsubscribers.forEach(unsub => unsub());
             unsubscribers = [];
 
+            if (dataChannel) {
+                dataChannel.close();
+                dataChannel = null;
+            }
+            isRemoteVideoEnabled = false;
+
             if (peerConnection) {
                 peerConnection.close();
                 peerConnection = null;
@@ -741,7 +811,7 @@
             ui.videoBtnText.innerText = "Kamera: OFF";
             ui.localVideo.classList.remove('opacity-100');
             ui.localVideo.classList.add('opacity-0');
-            ui.lcd.classList.remove('video-mode');
+            updateVideoModeUI();
 
             ui.rxIndicator.style.opacity = '0';
             ui.txIndicator.style.opacity = '0';
@@ -854,6 +924,18 @@
                 ui.videoBtnText.innerText = "Kamera: OFF";
                 ui.localVideo.classList.remove('opacity-100');
                 ui.localVideo.classList.add('opacity-0');
+                
+                updateVideoModeUI(); 
+
+                if (dataChannel && dataChannel.readyState === 'open') {
+                    dataChannel.send(JSON.stringify({ type: 'VIDEO_TOGGLE', state: false }));
+                }
+                
+                if (peerConnection) {
+                    const transceivers = peerConnection.getTransceivers();
+                    const videoTransceiver = transceivers.find(t => t.receiver && t.receiver.track && t.receiver.track.kind === 'video');
+                    if (videoTransceiver) videoTransceiver.sender.replaceTrack(null);
+                }
             } else {
                 try {
                     const newStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
@@ -862,16 +944,24 @@
                     ui.localVideo.srcObject = new MediaStream([newVideoTrack]);
                     
                     if (peerConnection) {
-                        const sender = peerConnection.getSenders().find(s => s.track && s.track.kind === 'video');
-                        if (sender) sender.replaceTrack(newVideoTrack);
-                        else peerConnection.addTrack(newVideoTrack, localStream);
+                        const transceivers = peerConnection.getTransceivers();
+                        const videoTransceiver = transceivers.find(t => t.receiver && t.receiver.track && t.receiver.track.kind === 'video');
+                        if (videoTransceiver) {
+                            videoTransceiver.sender.replaceTrack(newVideoTrack);
+                        }
                     }
+                    
                     isVideoEnabled = true;
                     ui.videoIcon.innerText = "📷";
                     ui.videoBtnText.innerText = "Kamera: ON";
                     ui.localVideo.classList.remove('opacity-0');
                     ui.localVideo.classList.add('opacity-100');
-                    ui.lcd.classList.add('video-mode');
+                    
+                    updateVideoModeUI(); 
+
+                    if (dataChannel && dataChannel.readyState === 'open') {
+                        dataChannel.send(JSON.stringify({ type: 'VIDEO_TOGGLE', state: true }));
+                    }
                 } catch (error) {
                     alert("Kamera gagal diakses atau tidak ada izin.");
                 }
@@ -904,15 +994,13 @@
         checkAuth();
         
         // --- EVENT LISTENER KONEKSI TERPUTUS / TERTUTUP ---
-
-        // Deteksi jika pengguna menutup tab peramban atau keluar aplikasi
         window.addEventListener('beforeunload', () => {
+            if (contactsSubscription) supabase.removeChannel(contactsSubscription);
             if (myId) supabase.from('employees').update({ is_online: 'offline' }).eq('code', myId).then();
             cleanupConnection();
             if (localStream) localStream.getTracks().forEach(track => track.stop());
         });
 
-        // Deteksi koneksi internet terputus (Hilang sinyal jaringan)
         window.addEventListener('offline', () => {
             if (myId) {
                 supabase.from('employees').update({ is_online: 'offline' }).eq('code', myId);
@@ -920,10 +1008,8 @@
             }
         });
 
-        // Deteksi jika jaringan internet kembali terhubung
         window.addEventListener('online', () => {
             if (myId) {
-                // Kembalikan ke 'busy' jika sedang tersambung pada panggilan, jika tidak kembalikan ke 'online'
                 const status = (peerConnection && peerConnection.connectionState === 'connected') ? 'busy' : 'online';
                 supabase.from('employees').update({ is_online: status }).eq('code', myId);
                 updateLCD(status === 'busy' ? "CONNECTED" : "STANDBY", roomId || myId, "✔");
