@@ -170,7 +170,6 @@
         <div class="volume-knob"></div>
 
         <div class="walkie-body p-6 border-4 border-[#1a2017]">
-            <!-- Brand / Top Area -->
             <div class="flex justify-between items-center mb-4 text-xs font-bold tracking-widest text-gray-500 uppercase">
                 <span>Comms-Pro VIP</span>
                 <span class="w-3 h-3 rounded-full bg-red-900 border border-gray-800 shadow-[inset_0_1px_3px_rgba(0,0,0,0.8)]" id="power-led"></span>
@@ -303,21 +302,14 @@
         let dataChannel = null;
         let isRemoteVideoEnabled = false;
         let contactsSubscription = null;
+        let heartbeatInterval = null;
 
         const configuration = {
             iceServers: [
                 { urls: 'stun:stun1.l.google.com:19302' },
                 { urls: 'stun:stun2.l.google.com:19302' },
-                {
-                    urls: 'turn:openrelay.metered.ca:80',
-                    username: 'openrelayproject',
-                    credential: 'openrelayproject'
-                },
-                {
-                    urls: 'turn:openrelay.metered.ca:443',
-                    username: 'openrelayproject',
-                    credential: 'openrelayproject'
-                }
+                { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+                { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' }
             ],
             iceCandidatePoolSize: 10
         };
@@ -356,6 +348,27 @@
             employeeNameDisplay: document.getElementById('employee-name-display')
         };
 
+        // --- SISTEM DETAK JANTUNG (HEARTBEAT) ---
+        // Tugas ini memastikan Supabase tahu bahwa pengguna benar-benar masih online
+        function startHeartbeat() {
+            if (heartbeatInterval) clearInterval(heartbeatInterval);
+            heartbeatInterval = setInterval(async () => {
+                if (myId) {
+                    await supabase.from('employees').update({ 
+                        last_seen: new Date().toISOString() 
+                    }).eq('code', myId);
+                }
+            }, 45000); 
+        }
+
+        function stopHeartbeat() {
+            if (heartbeatInterval) {
+                clearInterval(heartbeatInterval);
+                heartbeatInterval = null;
+            }
+        }
+
+        // --- SUBSKIPSI REALTIME ---
         function subscribeToEmployeeStatus() {
             if (contactsSubscription) return;
             contactsSubscription = supabase
@@ -387,6 +400,8 @@
             };
         }
 
+        // --- PEMUATAN DAFTAR KONTAK YANG SUDAH DIBERSIHKAN ---
+        // Karena Server Supabase sekarang bertugas menghapus Zombie, Klien tidak perlu menghitung waktu lagi.
         async function loadContacts() {
             const { data, error } = await supabase
                 .from('employees')
@@ -412,7 +427,7 @@
                 
                 let statusText = 'OFF';
                 let dotColor = 'text-gray-600';
-
+                
                 if (emp.is_online === 'busy') {
                     statusText = 'PANGGILAN';
                     dotColor = 'text-red-500';
@@ -441,31 +456,13 @@
             loadContacts();
         });
 
-        // CEK AUTH / AUTO LOGIN
+
+        // --- CEK AUTH / AUTO LOGIN ---
         async function checkAuth() {
             const storedCode = localStorage.getItem('walkie_emp_code');
             const storedName = localStorage.getItem('walkie_emp_name');
 
             if (storedCode && storedName) {
-                // Verifikasi status di Supabase terlebih dahulu
-                const { data, error } = await supabase
-                    .from('employees')
-                    .select('is_online')
-                    .eq('code', storedCode)
-                    .single();
-
-                // Hanya izinkan auto-login jika statusnya 'offline'
-                if (error || !data || data.is_online !== 'offline') {
-                    alert("Sesi telah habis atau akun sedang ONLINE/SIBUK di perangkat lain!");
-                    localStorage.removeItem('walkie_emp_code');
-                    localStorage.removeItem('walkie_emp_name');
-                    ui.powerLed.classList.add('bg-red-900');
-                    updateLCD("LOGIN", "...", "●");
-                    ui.loginPanel.classList.remove('hidden');
-                    ui.setupPanel.classList.add('hidden');
-                    return;
-                }
-
                 myId = storedCode;
                 myName = storedName;
                 ui.myIdDisplay.innerText = myId;
@@ -474,7 +471,12 @@
                 ui.loginPanel.classList.add('hidden');
                 ui.setupPanel.classList.remove('hidden');
                 
-                await supabase.from('employees').update({ is_online: 'online' }).eq('code', myId);
+                await supabase.from('employees').update({ 
+                    is_online: 'online', 
+                    last_seen: new Date().toISOString() 
+                }).eq('code', myId);
+                
+                startHeartbeat(); 
                 initFirebaseApp();
             } else {
                 ui.powerLed.classList.add('bg-red-900');
@@ -482,7 +484,7 @@
             }
         }
 
-        // PROSES LOGIN MANUAL (SYARAT: IS_ONLINE HARUS 'offline')
+        // --- PROSES LOGIN MANUAL (VALIDASI KETAT) ---
         ui.btnLogin.addEventListener('click', async () => {
             const code = ui.loginCodeInput.value.trim().toUpperCase();
             if(!code) return;
@@ -501,14 +503,21 @@
                 return;
             }
 
-            // KETENTUAN: Hanya bisa login jika is_online terisi 'offline'
+            // Validasi: Tolak login jika belum berstatus 'offline'
+            // (Akun yang nyangkut/zombie akan di-'offline'-kan oleh Supabase Server secara otomatis setiap menit)
             if (data.is_online !== 'offline') {
-                alert("Gagal masuk! Kode ini sedang ONLINE atau SIBUK di perangkat lain.");
-                ui.btnLogin.innerText = "MASUK";
-                return;
+                const paksaLogin = confirm("Kode ini sedang AKTIF di perangkat lain.\n(Jika perangkat sebelumnya mati mendadak, tunggu 1-2 menit hingga server membersihkan sesi otomatis). \n\nApakah Anda ingin mencoba memaksa masuk sekarang?");
+                if(!paksaLogin) {
+                    ui.btnLogin.innerText = "MASUK";
+                    return;
+                }
             }
 
-            await supabase.from('employees').update({ is_online: 'online' }).eq('code', code);
+            await supabase.from('employees').update({ 
+                is_online: 'online', 
+                last_seen: new Date().toISOString() 
+            }).eq('code', code);
+            
             localStorage.setItem('walkie_emp_code', data.code);
             localStorage.setItem('walkie_emp_name', data.name);
             ui.loginCodeInput.value = "";
@@ -516,12 +525,16 @@
         });
 
         async function performLogout() {
+            stopHeartbeat();
             if (contactsSubscription) {
                 supabase.removeChannel(contactsSubscription);
                 contactsSubscription = null;
             }
             if (myId) {
-                await supabase.from('employees').update({ is_online: 'offline' }).eq('code', myId);
+                await supabase.from('employees').update({ 
+                    is_online: 'offline', 
+                    last_seen: new Date().toISOString() 
+                }).eq('code', myId);
             }
             await cleanupConnection();
             localStorage.removeItem('walkie_emp_code');
@@ -611,9 +624,11 @@
             if (isMyOwnRoom) showSetupPanel();
             else showCallPanel(roomId);
 
-            // JIKA MELAKUKAN PANGGILAN KELUAR -> UBAH STATUS MEJADI 'busy'
             if (!isMyOwnRoom && myId) {
-                await supabase.from('employees').update({ is_online: 'busy' }).eq('code', myId);
+                await supabase.from('employees').update({ 
+                    is_online: 'busy', 
+                    last_seen: new Date().toISOString() 
+                }).eq('code', myId);
             }
 
             const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
@@ -689,9 +704,11 @@
                     const roomData = snapshot.data();
                     if (roomData.offer && !peerConnection.currentRemoteDescription) {
                         try {
-                            // JIKA MENERIMA PANGGILAN MASUK -> UBAH STATUS MEJADI 'busy'
                             if (myId) {
-                                supabase.from('employees').update({ is_online: 'busy' }).eq('code', myId);
+                                supabase.from('employees').update({ 
+                                    is_online: 'busy', 
+                                    last_seen: new Date().toISOString() 
+                                }).eq('code', myId);
                             }
 
                             await peerConnection.setRemoteDescription(new RTCSessionDescription(roomData.offer));
@@ -722,9 +739,11 @@
                 if (roomSnap.exists() && roomSnap.data().offer && !peerConnection.currentRemoteDescription) {
                     const roomData = roomSnap.data();
                     
-                    // MENERIMA PANGGILAN MASUK (OFFER TERSEDIA)
                     if (myId) {
-                        supabase.from('employees').update({ is_online: 'busy' }).eq('code', myId);
+                        supabase.from('employees').update({ 
+                            is_online: 'busy', 
+                            last_seen: new Date().toISOString() 
+                        }).eq('code', myId);
                     }
 
                     await peerConnection.setRemoteDescription(new RTCSessionDescription(roomData.offer));
@@ -764,9 +783,11 @@
                     updateLCD("CONNECTED", roomId, "✔");
                     showCallPanel(roomId);
                     
-                    // KEDUA BELAH PIHAK DIPASTIKAN BERSTATUS 'busy'
                     if (myId) {
-                        supabase.from('employees').update({ is_online: 'busy' }).eq('code', myId);
+                        supabase.from('employees').update({ 
+                            is_online: 'busy', 
+                            last_seen: new Date().toISOString() 
+                        }).eq('code', myId);
                     }
                     
                     if (localStream) {
@@ -788,7 +809,7 @@
             setTimeout(async () => {
                 await cleanupConnection();
                 connectToRoom(myId); 
-            }, 1500);
+            }, 500);
         }
 
         async function cleanupConnection() {
@@ -806,9 +827,11 @@
                 peerConnection = null;
             }
             
-            // SAAT PANGGILAN SELESAI -> KEMBALIKAN STATUS KE 'online'
             if (myId) {
-                supabase.from('employees').update({ is_online: 'online' }).eq('code', myId);
+                supabase.from('employees').update({ 
+                    is_online: 'online', 
+                    last_seen: new Date().toISOString() 
+                }).eq('code', myId);
             }
 
             if (localStream) {
@@ -842,11 +865,9 @@
             isCaller = false;
         }
 
-        // MEMULAI PANGGILAN (PROTEKSI STATUS TARGET)
         async function initiateCall(targetCode) {
             if (targetCode === myId) return;
 
-            // Periksa status target terlebih dahulu
             const { data, error } = await supabase
                 .from('employees')
                 .select('is_online')
@@ -854,7 +875,7 @@
                 .single();
 
             if (error || !data || data.is_online !== 'online') {
-                alert("Pegawai ini sedang SIBUK dalam panggilan lain atau OFFLINE!");
+                alert("Pegawai ini sedang SIBUK atau OFFLINE!");
                 return;
             }
 
@@ -862,10 +883,17 @@
             connectToRoom(targetCode);     
         }
 
-        ui.btnHangup.addEventListener('click', async () => {
-            await cleanupConnection();
-            connectToRoom(myId); 
-        });
+        ui.btnHangup.addEventListener('click', () => {
+    // Ubah UI seketika sebelum memproses backend
+    ui.setupPanel.classList.remove('hidden');
+    ui.callPanel.classList.add('hidden');
+    updateLCD("STANDBY", myId, "✔");
+    
+    // Biarkan cleanup berjalan di latar belakang
+    cleanupConnection().then(() => {
+        connectToRoom(myId); 
+    });
+});
 
         ui.btnForceConnect.addEventListener('click', () => {
             startDevice();
@@ -1025,23 +1053,35 @@
         checkAuth();
         
         window.addEventListener('beforeunload', () => {
+            stopHeartbeat();
             if (contactsSubscription) supabase.removeChannel(contactsSubscription);
-            if (myId) supabase.from('employees').update({ is_online: 'offline' }).eq('code', myId).then();
+            if (myId) supabase.from('employees').update({ 
+                is_online: 'offline', 
+                last_seen: new Date().toISOString() 
+            }).eq('code', myId).then();
             cleanupConnection();
             if (localStream) localStream.getTracks().forEach(track => track.stop());
         });
 
         window.addEventListener('offline', () => {
             if (myId) {
-                supabase.from('employees').update({ is_online: 'offline' }).eq('code', myId);
+                stopHeartbeat();
+                supabase.from('employees').update({ 
+                    is_online: 'offline', 
+                    last_seen: new Date().toISOString() 
+                }).eq('code', myId);
                 updateLCD("NO NET", "...", "✖");
             }
         });
 
         window.addEventListener('online', () => {
             if (myId) {
+                startHeartbeat();
                 const status = (peerConnection && peerConnection.connectionState === 'connected') ? 'busy' : 'online';
-                supabase.from('employees').update({ is_online: status }).eq('code', myId);
+                supabase.from('employees').update({ 
+                    is_online: status, 
+                    last_seen: new Date().toISOString() 
+                }).eq('code', myId);
                 updateLCD(status === 'busy' ? "CONNECTED" : "STANDBY", roomId || myId, "✔");
             }
         });
