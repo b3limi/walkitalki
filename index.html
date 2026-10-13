@@ -404,7 +404,7 @@ autoConnect();
         }
     }
 
-    updateLCD("CONNECTING", "CH-3", "⧖");
+    updateLCD("CONNECTING", "CH-1", "⧖");
     roomId = FIXED_ROOM_ID;
     const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
     
@@ -433,7 +433,7 @@ autoConnect();
 
             await updateDoc(roomRef, { answer: { type: answer.type, sdp: answer.sdp } });
             
-            showCallPanel("CH-3");
+            showCallPanel("CH-1");
             //updateLCD("CONNECTED", "CH-1", "✔");
 
             const callerCandidatesCollection = collection(roomRef, 'callerCandidates');
@@ -461,8 +461,8 @@ autoConnect();
 
             await updateDoc(roomRef, { offer: { type: offer.type, sdp: offer.sdp } });
             
-            showCallPanel("CH-3");
-            updateLCD("WAITING", "CH-3", "⧖");
+            showCallPanel("CH-1");
+            updateLCD("WAITING", "CH-1", "⧖");
 
             const unsubRoom = onSnapshot(roomRef, async snapshot => {
                 if (!peerConnection) return; 
@@ -489,7 +489,7 @@ autoConnect();
     }
 }
 
-       function setupWebRTCListeners() {
+     function setupWebRTCListeners() {
     peerConnection.addEventListener('track', event => {
         if (!remoteStream) {
             remoteStream = new MediaStream();
@@ -500,12 +500,23 @@ autoConnect();
 
     peerConnection.addEventListener('connectionstatechange', () => {
         if (peerConnection.connectionState === 'disconnected' || peerConnection.connectionState === 'failed') {
-            alert("Koneksi terputus dengan perangkat lawan.");
-            hangUp();
+            
+            // --- KODE YANG DIUBAH MULAI DARI SINI ---
+            // 1. Tampilkan status reconnecting di layar LCD
+            updateLCD("RECONNECT...", "---", "⧖");
+            
+            // 2. Tutup dan bersihkan koneksi yang terputus
+            hangUp(); 
+            
+            // 3. Refresh halaman secara otomatis setelah jeda 1.5 detik
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+            // --- KODE YANG DIUBAH SELESAI DI SINI ---
+
         } else if (peerConnection.connectionState === 'connected') {
             setupAudioLevelMonitor();
-            // Pindahkan indikator connected ke sini agar lebih akurat
-            updateLCD("CONNECTED", "CH-3", "✔");
+            updateLCD("CONNECTED", "CH-1", "✔");
         }
     });
 }
