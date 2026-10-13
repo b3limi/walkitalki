@@ -419,18 +419,27 @@
             }
         }
 
-        async function createRoom() {
-          if (!auth.currentUser) return;
+       async function createRoom() {
+            // Tambahkan alert ini untuk mengetes apakah tombol merespons sentuhan
+            alert("1. Tombol Create ditekan!");
+
+            if (!auth.currentUser) {
+                alert("2. Gagal: Koneksi Firebase terputus");
+                return;
+            }
             
-            // Aktifkan sistem suara saat jari menyentuh tombol
+            alert("3. Koneksi aman, memeriksa kamera...");
             initAudioContext();
 
-            // Cegah pemanggilan ulang jika kamera sudah menyala
             if (!localStream) {
                 const hasMedia = await openUserMedia();
-                if (!hasMedia) return;
+                if (!hasMedia) {
+                    alert("4. Gagal mengakses perangkat kamera");
+                    return;
+                }
             }
 
+            alert("5. Semua siap! Membuat ruangan...");
             updateLCD("CREATING", "...", "⧖");
             isCaller = true;
 
