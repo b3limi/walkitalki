@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>WebRTC Walkie Talkie Mobile - VIP Edition</title>
+    <title>WebRTC Walkie Talkie Mobile - VIP Edition 1.6</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
     
@@ -14,7 +14,6 @@
     <script src="capacitor.js"></script>
 
     <style>
-        /* [Gunakan CSS asli Anda dari index_2.html di sini] */
         body { background-color: #1a1a1a; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; font-family: 'Inter', sans-serif; touch-action: pan-y; -webkit-tap-highlight-color: transparent; }
         .walkie-body { background: linear-gradient(145deg, #2b3327, #1a2017); border-radius: 30px; box-shadow: -10px 10px 20px #0a0d09, 10px -10px 20px #34412f, inset 2px 2px 5px rgba(255,255,255,0.1), inset -5px -5px 15px rgba(0,0,0,0.5); position: relative; z-index: 10; }
         .antenna { position: absolute; top: -80px; right: 40px; width: 24px; height: 100px; background: linear-gradient(to right, #111, #333, #111); border-radius: 12px 12px 0 0; z-index: 1; box-shadow: inset -2px 0 5px rgba(0,0,0,0.5); }
@@ -37,16 +36,23 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
     </style>
 </head>
-<!-- [Gunakan Struktur HTML asli Anda dari index_2.html di sini. Tidak ada perubahan struktur body] -->
+
 <body class="text-gray-200 antialiased">
+    <!-- Overlay Layar Hitam Palsu (Hemat Baterai & Mencegah OS mematikan Kamera) -->
+    <div id="fake-screen-off" class="hidden fixed inset-0 bg-black z-[9999] flex flex-col items-center justify-center">
+        <p class="text-gray-800 text-xs font-mono mb-4">MODE LAYAR MATI AKTIF</p>
+        <p class="text-gray-700 text-[10px]">Ketuk 2x untuk menyalakan layar</p>
+    </div>
+
     <div class="relative w-80 max-w-[95vw] mt-16 mb-8">
         <div class="antenna"></div>
         <div class="volume-knob"></div>
         <div class="walkie-body p-6 border-4 border-[#1a2017]">
             <div class="flex justify-between items-center mb-4 text-xs font-bold tracking-widest text-gray-500 uppercase">
-                <span>Comms-Pro VIP 1.5</span>
+                <span>Comms-Pro VIP 1.3</span>
                 <span class="w-3 h-3 rounded-full bg-red-900 border border-gray-800 shadow-[inset_0_1px_3px_rgba(0,0,0,0.8)]" id="power-led"></span>
             </div>
+            
             <!-- LCD -->
             <div id="lcd" class="lcd-screen rounded-lg h-44 mb-6 text-[#111] transition-all duration-300">
                 <video id="remote-video" class="video-feed" autoplay playsinline></video>
@@ -63,6 +69,7 @@
                     </div>
                 </div>
             </div>
+
             <!-- Login -->
             <div id="login-panel" class="space-y-4 mb-6">
                 <div class="text-center bg-gray-900 p-2 rounded-lg border border-gray-700 shadow-[inset_0_2px_5px_rgba(0,0,0,0.5)]"><span class="text-[10px] text-gray-500 font-bold block mb-1">OTENTIKASI PEGAWAI</span></div>
@@ -71,6 +78,7 @@
                     <button id="btn-login" class="w-full bg-blue-800 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded shadow border border-blue-900 transition-colors text-lg">MASUK</button>
                 </div>
             </div>
+
             <!-- Setup Panel -->
             <div id="setup-panel" class="space-y-4 mb-6 hidden">
                 <div id="permission-msg" class="text-center">
@@ -89,26 +97,36 @@
                     <button id="btn-logout" class="mt-4 text-xs text-gray-500 hover:text-red-400 underline w-full text-center">Tutup Sesi (Keluar)</button>
                 </div>
             </div>
+
             <!-- Active Call Controls -->
             <div id="call-panel" class="hidden mb-6 flex flex-col items-center">
                 <button id="btn-hangup" class="mb-4 text-xs bg-red-900 text-gray-300 py-2 px-6 rounded border border-red-800 flex items-center justify-center space-x-2 w-full max-w-[200px]"><span class="text-base">✖</span><span class="font-bold tracking-wider">TUTUP PANGGILAN</span></button>
+                
                 <div class="flex space-x-2 mb-3 justify-center">
-    <button id="btn-toggle-video" class="text-xs bg-gray-800 text-gray-300 py-1.5 px-3 rounded flex items-center space-x-1"><span id="video-icon">🚫</span><span id="video-btn-text">Kamera: OFF</span></button>
-    <button id="btn-toggle-mic" class="text-xs bg-gray-800 text-gray-300 py-1.5 px-3 rounded flex items-center space-x-1"><span id="mic-icon">🎙️</span><span id="mic-btn-text">Mic: ON</span></button>
-    <!-- Tombol Baru -->
-    <button id="btn-request-cam" class="text-xs bg-blue-900 text-gray-200 py-1.5 px-3 rounded flex items-center space-x-1 border border-blue-700 hover:bg-blue-800 transition-colors">
-        <span>👁️</span><span>Lihat Target</span>
-    </button>
-</div>
+                    <button id="btn-toggle-video" class="text-xs bg-gray-800 text-gray-300 py-1.5 px-3 rounded flex items-center space-x-1"><span id="video-icon">🚫</span><span id="video-btn-text">Kamera: OFF</span></button>
+                    <button id="btn-toggle-mic" class="text-xs bg-gray-800 text-gray-300 py-1.5 px-3 rounded flex items-center space-x-1"><span id="mic-icon">🎙️</span><span id="mic-btn-text">Mic: ON</span></button>
+                    <!-- Tombol Request Kamera Remote -->
+                    <button id="btn-request-cam" class="text-xs bg-blue-900 text-gray-200 py-1.5 px-3 rounded flex items-center space-x-1 border border-blue-700 hover:bg-blue-800 transition-colors">
+                        <span>👁️</span><span>Lihat Target</span>
+                    </button>
+                </div>
+
+                <div class="w-full flex justify-center mb-4">
+                    <!-- Tombol Layar Mati Palsu -->
+                    <button id="btn-fake-screen-off" class="text-[10px] bg-gray-900 text-gray-400 py-1 px-3 rounded border border-gray-700 hover:bg-black transition-colors">
+                        🌙 Matikan Layar (Hemat Baterai & Kamera Tetap Hidup)
+                    </button>
+                </div>
+
                 <p class="text-[10px] text-center text-green-400 mb-2 animate-pulse">BERBICARA BEBAS</p>
                 <div class="w-28 h-28 rounded-full flex flex-col items-center justify-center border-4 border-[#111] bg-[#1a1a1a] shadow-[inset_0_4px_10px_rgba(0,0,0,0.6)]"><span id="mic-status-icon" class="text-green-500 font-bold text-2xl">MIC</span><span id="mic-status-text" class="text-green-500 text-xs tracking-widest mt-1 animate-pulse">LIVE</span></div>
             </div>
+            
             <div class="h-24 w-full speaker-grille rounded-lg border border-gray-900 shadow-[inset_0_2px_10px_rgba(0,0,0,0.8)]"></div>
         </div>
     </div>
 
     <script type="module">
-        // [Inisialisasi Firebase & Supabase Sama Seperti Sebelumnya]
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, updateDoc, deleteDoc, collection, onSnapshot, addDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -123,6 +141,7 @@
         let isCaller = false; let unsubscribers = []; let audioContext = null;
         let isVideoEnabled = false; let isMicEnabled = true; let dataChannel = null; let isRemoteVideoEnabled = false;
         let contactsSubscription = null; let heartbeatInterval = null;
+        let wakeLock = null; // Menahan layar agar tidak mati otomatis
 
         const configuration = {
             iceServers: [ { urls: 'stun:stun1.l.google.com:19302' }, { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' } ]
@@ -140,36 +159,65 @@
             btnRequestCam: document.getElementById('btn-request-cam'),
             micStatusIcon: document.getElementById('mic-status-icon'), micStatusText: document.getElementById('mic-status-text'), remoteVideo: document.getElementById('remote-video'),
             localVideo: document.getElementById('local-video'), powerLed: document.getElementById('power-led'), myIdDisplay: document.getElementById('my-id-display'),
-            employeeNameDisplay: document.getElementById('employee-name-display')
+            employeeNameDisplay: document.getElementById('employee-name-display'),
+            fakeScreenOff: document.getElementById('fake-screen-off'), btnFakeScreenOff: document.getElementById('btn-fake-screen-off')
         };
 
         /* =======================================================
-           CAPACITOR FOREGROUND SERVICE (LEBIH HEMAT)
+           WAKELOCK & FAKE SCREEN OFF API
+           ======================================================= */
+        async function requestWakeLock() {
+            if ('wakeLock' in navigator) {
+                try {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    wakeLock.addEventListener('release', () => { console.log('Wake Lock dilepas'); });
+                } catch (err) { console.log(`Wake Lock gagal: ${err.name}, ${err.message}`); }
+            }
+        }
+
+        document.addEventListener('visibilitychange', async () => {
+            if (wakeLock !== null && document.visibilityState === 'visible') { await requestWakeLock(); }
+        });
+
+        ui.btnFakeScreenOff.addEventListener('click', async () => {
+            if ('wakeLock' in navigator) {
+                try { if (!wakeLock) { wakeLock = await navigator.wakeLock.request('screen'); } } catch (e) { console.log("WakeLock gagal"); }
+            }
+            ui.fakeScreenOff.classList.remove('hidden');
+        });
+
+        let lastTap = 0;
+        ui.fakeScreenOff.addEventListener('touchstart', (e) => {
+            const currentTime = new Date().getTime(); const tapLength = currentTime - lastTap;
+            if (tapLength < 500 && tapLength > 0) { ui.fakeScreenOff.classList.add('hidden'); }
+            lastTap = currentTime;
+        });
+
+        /* =======================================================
+           CAPACITOR FOREGROUND SERVICE (Diperbaiki)
            ======================================================= */
         function initBackgroundMode() {
             if (window.cordova && window.cordova.plugins && window.cordova.plugins.backgroundMode) {
                 const bgMode = window.cordova.plugins.backgroundMode;
                 bgMode.enable();
                 bgMode.overrideBackButton();
-                bgMode.setDefaults({
-                    title: 'Comms-Pro VIP Aktif',
-                    text: 'Menunggu Panggilan Masuk...',
-                    hidden: false, silent: true // Silent agar tidak berbunyi saat muncul
-                });
+                bgMode.setDefaults({ title: 'Comms-Pro VIP Aktif', text: 'Menunggu Panggilan Masuk...', hidden: false, silent: true });
                 
-                // HEMAT BATERAI: Matikan stream mic saat masuk background & standby
+                bgMode.on('enable', function() {
+                    bgMode.disableWebViewOptimizations();
+                    try { bgMode.disableBatteryOptimizations(); } catch(e){}
+                });
+
                 bgMode.on('activate', function() {
                     bgMode.disableWebViewOptimizations(); 
-                    if (ui.callPanel.classList.contains('hidden')) {
-                        // Jika tidak ada panggilan, hentikan mic fisik tapi biarkan koneksi Supabase/Firebase
-                        stopLocalMedia();
+                    if (ui.callPanel.classList.contains('hidden') && localStream) {
+                        localStream.getAudioTracks().forEach(track => { track.enabled = false; });
                     }
                 });
                 
                 bgMode.on('deactivate', function() {
-                    // Aplikasi dibuka kembali
-                    if (ui.callPanel.classList.contains('hidden')) {
-                         startDevice(); // minta mic lagi untuk standby
+                    if (ui.callPanel.classList.contains('hidden') && localStream) {
+                        localStream.getAudioTracks().forEach(track => { track.enabled = false; });
                     }
                 });
             }
@@ -181,7 +229,9 @@
              }
         }
 
-        // [Fungsi Helper]
+        /* =======================================================
+           MANAJEMEN MEDIA & HELPER
+           ======================================================= */
         function createEmptyVideoTrack({ width = 640, height = 480 } = {}) {
             const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height;
             canvas.getContext('2d').fillRect(0, 0, width, height); return canvas.captureStream(1).getVideoTracks()[0];
@@ -201,49 +251,31 @@
             contactsSubscription = supabase.channel('employee-status-changes').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'employees' }, () => { loadContacts(); }).subscribe();
         }
 
-        /* =======================================================
-           MANAJEMEN MEDIA (Dinamis Aktifkan Mic)
-           ======================================================= */
         async function openUserMedia() {
             try {
-                if(localStream) stopLocalMedia(); // Bersihkan yang lama
-                
+                if(localStream) stopLocalMedia(); 
                 const constraints = { video: false, audio: { echoCancellation: true, noiseSuppression: true } };
-                // Memaksa meminta izin ulang jika di dalam Webview Native
                 localStream = await navigator.mediaDevices.getUserMedia(constraints);
                 return true;
-            } catch (error) {
-                console.error("Gagal akses media:", error);
-                return false;
-            }
+            } catch (error) { console.error("Gagal akses media:", error); return false; }
         }
 
         function stopLocalMedia() {
-            if (localStream) {
-                localStream.getTracks().forEach(track => track.stop());
-                localStream = null;
-            }
+            if (localStream) { localStream.getTracks().forEach(track => track.stop()); localStream = null; }
         }
 
         async function startDevice() {
-            initAudioContext();
-            updateLCD("MINTA IZIN", "...", "⧖");
-            
+            initAudioContext(); updateLCD("MINTA IZIN", "...", "⧖");
             const hasMedia = await openUserMedia();
             if (!hasMedia) {
                 ui.permissionMsg.classList.remove('hidden'); ui.btnForceConnect.classList.remove('hidden'); ui.dialPanel.classList.add('hidden');
-                updateLCD("BUTUH TAP", "---", "✖");
-                return;
+                updateLCD("BUTUH TAP", "---", "✖"); return;
             }
-            
-            // Saat standby, matikan track audio agar hemat baterai, tapi siap dipakai
             localStream.getAudioTracks().forEach(track => { track.enabled = false; });
-
             ui.permissionMsg.classList.add('hidden'); ui.btnForceConnect.classList.add('hidden'); ui.dialPanel.classList.remove('hidden');
             await loadContacts(); subscribeToEmployeeStatus(); connectToRoom(myId); 
         }
 
-        // [Fungsi Render UI]
         function updateVideoModeUI() {
             if (isVideoEnabled || isRemoteVideoEnabled) { ui.lcd.classList.add('video-mode'); ui.remoteVideo.play().catch(() => {}); } 
             else { ui.lcd.classList.remove('video-mode'); }
@@ -279,8 +311,7 @@
                 myId = storedCode; myName = storedName; ui.myIdDisplay.innerText = myId; ui.employeeNameDisplay.innerText = myName;
                 ui.loginPanel.classList.add('hidden'); ui.setupPanel.classList.remove('hidden');
                 await supabase.from('employees').update({ is_online: 'online', last_seen: new Date().toISOString() }).eq('code', myId);
-                startHeartbeat(); initFirebaseApp();
-                initBackgroundMode(); // Aktifkan Foreground Service HANYA setelah login
+                startHeartbeat(); initFirebaseApp(); initBackgroundMode();
             } else { ui.powerLed.classList.add('bg-red-900'); updateLCD("LOGIN", "...", "●"); }
         }
 
@@ -294,6 +325,7 @@
             }
             localStorage.setItem('walkie_emp_code', data.code); localStorage.setItem('walkie_emp_name', data.name);
             ui.loginCodeInput.value = ""; checkAuth();
+            requestWakeLock();
         });
 
         ui.btnLogout.addEventListener('click', async () => {
@@ -308,7 +340,6 @@
 
         async function initFirebaseApp() {
             try {
-                // Konfigurasi Asli Anda
                 const myFirebaseConfig = { apiKey: "AIzaSyB8Z9x6ovw6AW-bvCJr02Gdzb1-WKMPefw", authDomain: "walkitalki-6985b.firebaseapp.com", projectId: "walkitalki-6985b", storageBucket: "walkitalki-6985b.firebasestorage.app", messagingSenderId: "503583235135", appId: "1:503583235135:web:7fa355d440ce17cf402c8a" };
                 app = initializeApp(myFirebaseConfig); db = getFirestore(app); auth = getAuth(app);
                 await signInAnonymously(auth); 
@@ -319,12 +350,11 @@
         function initAudioContext() { if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)(); if (audioContext.state === 'suspended') audioContext.resume(); }
 
         /* =======================================================
-           LOGIKA WEBRTC & PERBAIKAN MIC OTOMATIS
+           LOGIKA WEBRTC
            ======================================================= */
         async function connectToRoom(targetRoomId) {
             if (!auth.currentUser) return;
             roomId = targetRoomId; const isMyOwnRoom = (roomId === myId);
-            
             updateLCD(isMyOwnRoom ? "STANDBY" : "CALLING...", roomId, "⧖");
             updateBackgroundNotification(isMyOwnRoom ? "Menunggu Panggilan Masuk..." : `Panggilan Aktif: ${roomId}`);
             
@@ -336,12 +366,7 @@
             try {
                 peerConnection = new RTCPeerConnection(configuration);
                 setupWebRTCListeners();
-                
-                // [PENTING] Memaksa Mic Terbuka saat membuat koneksi ke Room
-                if (!localStream) {
-                    await openUserMedia();
-                }
-
+                if (!localStream) { await openUserMedia(); }
                 if (localStream) {
                     if (localStream.getVideoTracks().length === 0) localStream.addTrack(createEmptyVideoTrack());
                     localStream.getTracks().forEach(track => { peerConnection.addTrack(track, localStream); });
@@ -349,24 +374,16 @@
 
                 let roomSnap = await getDoc(roomRef);
                 if (!roomSnap.exists()) {
-                    // Menjadi Caller (Standby di Room Sendiri)
                     try {
                         await setDoc(roomRef, { createdAt: new Date().toISOString(), creator: auth.currentUser.uid });
-isCaller = true; 
-dataChannel = peerConnection.createDataChannel("signaling");
-// 👇 Ganti baris onmessage menjadi seperti ini
-dataChannel.onmessage = handleDataChannelMessage;
+                        isCaller = true; dataChannel = peerConnection.createDataChannel("signaling");
+                        dataChannel.onmessage = handleDataChannelMessage;
+                        
                         const unsubRoom = onSnapshot(roomRef, async snapshot => {
-                            if (!peerConnection) return; 
-                            if (!snapshot.exists()) { handleDisconnect(); return; }
+                            if (!peerConnection) return; if (!snapshot.exists()) { handleDisconnect(); return; }
                             const data = snapshot.data();
-                            // Jika ada yang menjawab (Answer), ini berarti ada Panggilan Masuk!
                             if (!peerConnection.currentRemoteDescription && data && data.answer) {
-                                try { 
-                                    await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer)); 
-                                    // BUKA MIC KARENA ADA YANG MEMANGGIL
-                                    activateMicOtomatis();
-                                } catch (e) {}
+                                try { await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer)); activateMicOtomatis(); } catch (e) {}
                             }
                         });
                         unsubscribers.push(unsubRoom);
@@ -383,11 +400,9 @@ dataChannel.onmessage = handleDataChannelMessage;
                     } catch (createErr) { roomSnap = await getDoc(roomRef); }
                 }
 
-                // Menjadi Callee (Menjawab panggilan ke room orang lain)
                 isCaller = false;
                 const unsubRoom = onSnapshot(roomRef, async snapshot => {
-                    if (!peerConnection) return;
-                    if (!snapshot.exists()) { handleDisconnect(); return; }
+                    if (!peerConnection) return; if (!snapshot.exists()) { handleDisconnect(); return; }
                     const roomData = snapshot.data();
                     if (roomData.offer && !peerConnection.currentRemoteDescription) {
                         try {
@@ -416,19 +431,12 @@ dataChannel.onmessage = handleDataChannelMessage;
             } catch (err) { handleDisconnect(); }
         }
 
-        // FUNGSI KHUSUS: Mengaktifkan Mic Otomatis Saat Terhubung
         async function activateMicOtomatis() {
              if (window.cordova && window.cordova.plugins && window.cordova.plugins.backgroundMode) {
-                  // Membangunkan layar HP jika terkunci saat panggilan masuk
                   window.cordova.plugins.backgroundMode.wakeUp();
                   window.cordova.plugins.backgroundMode.unlock(); 
              }
-             
-             // Pastikan akses mic tersedia jika sebelumnya dibersihkan oleh hemat baterai
-             if(!localStream || localStream.getAudioTracks().length === 0) {
-                 await openUserMedia();
-             }
-
+             if(!localStream || localStream.getAudioTracks().length === 0) { await openUserMedia(); }
              if (localStream) {
                   localStream.getAudioTracks().forEach(track => { track.enabled = true; });
                   isMicEnabled = true;
@@ -438,12 +446,10 @@ dataChannel.onmessage = handleDataChannelMessage;
         }
 
         function setupWebRTCListeners() {
-        peerConnection.addEventListener('datachannel', event => { 
+            peerConnection.addEventListener('datachannel', event => { 
                 dataChannel = event.channel; 
-                // 👇 Ganti baris onmessage menjadi ini
                 dataChannel.onmessage = handleDataChannelMessage; 
             });
-            
             peerConnection.addEventListener('track', event => {
                 if (!remoteStream) { remoteStream = new MediaStream(); ui.remoteVideo.srcObject = remoteStream; }
                 if (!remoteStream.getTracks().find(t => t.id === event.track.id)) { remoteStream.addTrack(event.track); }
@@ -455,8 +461,6 @@ dataChannel.onmessage = handleDataChannelMessage;
                 } else if (peerConnection.connectionState === 'connected') {
                     setupAudioLevelMonitor(); updateLCD("CONNECTED", roomId, "✔"); showCallPanel(roomId);
                     if (myId) supabase.from('employees').update({ is_online: 'busy', last_seen: new Date().toISOString() }).eq('code', myId);
-                    
-                    // OTOMATIS AKTIFKAN MIC KETIKA KONEKSI SUKSES (Bahkan jika Kamera Off)
                     activateMicOtomatis();
                 }
             });
@@ -466,18 +470,15 @@ dataChannel.onmessage = handleDataChannelMessage;
             try { 
                 const d = JSON.parse(e.data); 
                 if (d.type === 'VIDEO_TOGGLE') { 
-                    isRemoteVideoEnabled = d.state; 
-                    updateVideoModeUI(); 
+                    isRemoteVideoEnabled = d.state; updateVideoModeUI(); 
                 } else if (d.type === 'REQUEST_CAMERA_ON') {
-                    // Jika ada perintah minta kamera dinyalakan
                     turnOnCamera();
                 }
             } catch(err){} 
         }
 
         function handleDisconnect() {
-            updateLCD("DROPPED", "---", "✖");
-            updateBackgroundNotification("Menunggu Panggilan Masuk...");
+            updateLCD("DROPPED", "---", "✖"); updateBackgroundNotification("Menunggu Panggilan Masuk...");
             setTimeout(() => { cleanupConnection(); connectToRoom(myId); }, 500);
         }
 
@@ -487,8 +488,8 @@ dataChannel.onmessage = handleDataChannelMessage;
             if (peerConnection) { peerConnection.close(); peerConnection = null; }
             if (myId) supabase.from('employees').update({ is_online: 'online', last_seen: new Date().toISOString() }).eq('code', myId);
             
-            // HEMAT DAYA: Matikan stream saat koneksi WebRTC putus
-            stopLocalMedia();
+            // JANGAN stop media jika sedang Fake Screen Off
+            if(ui.fakeScreenOff.classList.contains('hidden')) { stopLocalMedia(); }
             
             remoteStream = null; ui.remoteVideo.srcObject = null; ui.localVideo.srcObject = null;
             isVideoEnabled = false; ui.videoIcon.innerText = "🚫"; ui.videoBtnText.innerText = "Kamera: OFF"; ui.localVideo.classList.remove('opacity-100'); ui.localVideo.classList.add('opacity-0'); updateVideoModeUI();
@@ -509,10 +510,11 @@ dataChannel.onmessage = handleDataChannelMessage;
         ui.btnHangup.addEventListener('click', () => {
             ui.setupPanel.classList.remove('hidden'); ui.callPanel.classList.add('hidden'); updateLCD("STANDBY", myId, "✔");
             updateBackgroundNotification("Menunggu Panggilan Masuk...");
-            cleanupConnection().then(() => { connectToRoom(myId); }); // Kembali standby di room sendiri
+            cleanupConnection().then(() => { connectToRoom(myId); });
         });
 
-        ui.btnForceConnect.addEventListener('click', () => { startDevice(); });
+        ui.btnForceConnect.addEventListener('click', () => { startDevice(); requestWakeLock(); });
+        
         ui.btnToggleMic.addEventListener('click', async () => {
             if (!localStream || localStream.getAudioTracks().length === 0) { await openUserMedia(); }
             if (!localStream) return;
@@ -537,18 +539,14 @@ dataChannel.onmessage = handleDataChannelMessage;
         }
 
         async function turnOnCamera() {
-            if (isVideoEnabled) return; // Jika sudah nyala, abaikan
-            
+            if (isVideoEnabled) return; 
             try {
                 if (!localStream) await openUserMedia();
                 const newStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }); 
                 const newVideoTrack = newStream.getVideoTracks()[0];
                 const oldDummy = localStream.getVideoTracks()[0]; 
                 
-                if (oldDummy) { 
-                    localStream.removeTrack(oldDummy); 
-                    oldDummy.stop(); 
-                }
+                if (oldDummy) { localStream.removeTrack(oldDummy); oldDummy.stop(); }
                 
                 localStream.addTrack(newVideoTrack); 
                 ui.localVideo.srcObject = new MediaStream([newVideoTrack]);
@@ -558,54 +556,33 @@ dataChannel.onmessage = handleDataChannelMessage;
                     if (videoSender) await videoSender.replaceTrack(newVideoTrack); 
                 }
                 
-                isVideoEnabled = true; 
-                ui.videoIcon.innerText = "📷"; 
-                ui.videoBtnText.innerText = "Kamera: ON"; 
-                ui.localVideo.classList.remove('opacity-0'); 
-                ui.localVideo.classList.add('opacity-100'); 
-                updateVideoModeUI(); 
+                isVideoEnabled = true; ui.videoIcon.innerText = "📷"; ui.videoBtnText.innerText = "Kamera: ON"; ui.localVideo.classList.remove('opacity-0'); ui.localVideo.classList.add('opacity-100'); updateVideoModeUI(); 
                 
-                if (dataChannel && dataChannel.readyState === 'open') { 
-                    dataChannel.send(JSON.stringify({ type: 'VIDEO_TOGGLE', state: true })); 
-                }
-            } catch (error) { 
-                console.log("Kamera gagal diakses atau tidak ada izin."); 
-            }
+                if (dataChannel && dataChannel.readyState === 'open') { dataChannel.send(JSON.stringify({ type: 'VIDEO_TOGGLE', state: true })); }
+            } catch (error) { console.log("Kamera gagal diakses."); }
         }
 
-       // Tombol Toggle Video Sendiri
         ui.btnToggleVideo.addEventListener('click', async () => {
             if (!localStream) await openUserMedia();
             if (isVideoEnabled) {
-                // Matikan Kamera
                 const videoTrack = localStream.getVideoTracks()[0]; if (videoTrack) { videoTrack.stop(); localStream.removeTrack(videoTrack); }
                 isVideoEnabled = false; ui.videoIcon.innerText = "🚫"; ui.videoBtnText.innerText = "Kamera: OFF"; ui.localVideo.classList.remove('opacity-100'); ui.localVideo.classList.add('opacity-0'); updateVideoModeUI(); 
                 if (dataChannel && dataChannel.readyState === 'open') { dataChannel.send(JSON.stringify({ type: 'VIDEO_TOGGLE', state: false })); }
                 const dummyTrack = createEmptyVideoTrack(); localStream.addTrack(dummyTrack);
                 if (peerConnection) { const videoSender = peerConnection.getSenders().find(s => s.track && s.track.kind === 'video'); if (videoSender) videoSender.replaceTrack(dummyTrack); }
             } else {
-                // Nyalakan Kamera menggunakan fungsi baru
                 await turnOnCamera();
             }
         });
 
-        // Tombol Request Kamera Target
         ui.btnRequestCam.addEventListener('click', () => {
             if (dataChannel && dataChannel.readyState === 'open') {
                 dataChannel.send(JSON.stringify({ type: 'REQUEST_CAMERA_ON' }));
-                
-                // Efek visual tombol saat ditekan
                 const originalText = ui.btnRequestCam.innerHTML;
                 ui.btnRequestCam.innerHTML = `<span>⏳</span><span>Meminta...</span>`;
                 ui.btnRequestCam.classList.add('bg-blue-600');
-                
-                setTimeout(() => { 
-                    ui.btnRequestCam.innerHTML = originalText;
-                    ui.btnRequestCam.classList.remove('bg-blue-600');
-                }, 2000);
-            } else {
-                alert("Koneksi peer-to-peer belum sepenuhnya terhubung.");
-            }
+                setTimeout(() => { ui.btnRequestCam.innerHTML = originalText; ui.btnRequestCam.classList.remove('bg-blue-600'); }, 2000);
+            } else { alert("Koneksi peer-to-peer belum sepenuhnya terhubung."); }
         });
 
         checkAuth();
