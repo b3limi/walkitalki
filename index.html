@@ -9,177 +9,48 @@
     
     <!-- Supabase CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Capacitor Plugin Loader -->
+    <script src="capacitor.js"></script>
 
     <style>
-        /* Custom Walkie Talkie Styles */
-        body {
-            background-color: #1a1a1a;
-            background-image: radial-gradient(circle at center, #2a2a2a 0%, #111 100%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            font-family: 'Inter', sans-serif;
-            touch-action: pan-y;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .walkie-body {
-            background: linear-gradient(145deg, #2b3327, #1a2017);
-            border-radius: 30px;
-            box-shadow: 
-                -10px 10px 20px #0a0d09,
-                10px -10px 20px #34412f,
-                inset 2px 2px 5px rgba(255,255,255,0.1),
-                inset -5px -5px 15px rgba(0,0,0,0.5);
-            position: relative;
-            z-index: 10;
-        }
-
-        .antenna {
-            position: absolute;
-            top: -80px;
-            right: 40px;
-            width: 24px;
-            height: 100px;
-            background: linear-gradient(to right, #111, #333, #111);
-            border-radius: 12px 12px 0 0;
-            z-index: 1;
-            box-shadow: inset -2px 0 5px rgba(0,0,0,0.5);
-        }
-        
-        .antenna::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: -4px;
-            width: 32px;
-            height: 20px;
-            background: #222;
-            border-radius: 5px 5px 0 0;
-        }
-
-        .volume-knob {
-            position: absolute;
-            top: -25px;
-            left: 50px;
-            width: 40px;
-            height: 30px;
-            background: repeating-linear-gradient(90deg, #222, #222 2px, #444 2px, #444 4px);
-            border-radius: 5px 5px 0 0;
-            z-index: 1;
-        }
-
-        .lcd-screen {
-            background: #8b9d77;
-            font-family: 'Share Tech Mono', monospace;
-            box-shadow: inset 2px 2px 10px rgba(0,0,0,0.5);
-            text-shadow: 1px 1px 0px rgba(162, 185, 137, 0.5);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .lcd-screen.active {
-            background: #a3c482;
-            box-shadow: inset 2px 2px 10px rgba(0,0,0,0.4), 0 0 15px rgba(163, 196, 130, 0.4);
-        }
-
-        /* Video Mode Styles */
-        .video-feed {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            z-index: 1;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-        .pip-video {
-            position: absolute;
-            bottom: 8px;
-            right: 8px;
-            width: 70px;
-            height: 90px;
-            object-fit: cover;
-            border: 2px solid rgba(255,255,255,0.4);
-            border-radius: 6px;
-            z-index: 2;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-        .lcd-screen.video-mode {
-            background: #111;
-        }
-        .lcd-screen.video-mode .video-feed,
-        .lcd-screen.video-mode .pip-video {
-            opacity: 1;
-        }
-        .lcd-content {
-            position: relative;
-            z-index: 10;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-        .lcd-screen.video-mode .lcd-content {
-            color: #fff;
-            text-shadow: 1px 1px 3px rgba(0,0,0,0.9), 0 0 8px rgba(0,0,0,0.8);
-        }
-        .lcd-screen.video-mode #rx-indicator {
-            color: #4ade80; 
-        }
-
-        .speaker-grille {
-            background: radial-gradient(#111 20%, transparent 25%);
-            background-size: 10px 10px;
-            opacity: 0.8;
-        }
-
-        @keyframes pulse-tx {
-            0% { opacity: 1; }
-            50% { opacity: 0.4; }
-            100% { opacity: 1; }
-        }
-        .tx-indicator {
-            display: none;
-        }
-        .transmitting .tx-indicator {
-            display: inline-block;
-            animation: pulse-tx 0.8s infinite;
-            color: #d32f2f;
-            text-shadow: 0 0 5px red;
-        }
-
-        button {
-            touch-action: manipulation;
-        }
-
+        /* [Gunakan CSS asli Anda dari index_2.html di sini] */
+        body { background-color: #1a1a1a; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; font-family: 'Inter', sans-serif; touch-action: pan-y; -webkit-tap-highlight-color: transparent; }
+        .walkie-body { background: linear-gradient(145deg, #2b3327, #1a2017); border-radius: 30px; box-shadow: -10px 10px 20px #0a0d09, 10px -10px 20px #34412f, inset 2px 2px 5px rgba(255,255,255,0.1), inset -5px -5px 15px rgba(0,0,0,0.5); position: relative; z-index: 10; }
+        .antenna { position: absolute; top: -80px; right: 40px; width: 24px; height: 100px; background: linear-gradient(to right, #111, #333, #111); border-radius: 12px 12px 0 0; z-index: 1; box-shadow: inset -2px 0 5px rgba(0,0,0,0.5); }
+        .volume-knob { position: absolute; top: -25px; left: 50px; width: 40px; height: 30px; background: repeating-linear-gradient(90deg, #222, #222 2px, #444 2px, #444 4px); border-radius: 5px 5px 0 0; z-index: 1; }
+        .lcd-screen { background: #8b9d77; font-family: 'Share Tech Mono', monospace; box-shadow: inset 2px 2px 10px rgba(0,0,0,0.5); text-shadow: 1px 1px 0px rgba(162, 185, 137, 0.5); position: relative; overflow: hidden; }
+        .lcd-screen.active { background: #a3c482; box-shadow: inset 2px 2px 10px rgba(0,0,0,0.4), 0 0 15px rgba(163, 196, 130, 0.4); }
+        .video-feed { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; opacity: 0; transition: opacity 0.3s; }
+        .pip-video { position: absolute; bottom: 8px; right: 8px; width: 70px; height: 90px; object-fit: cover; border: 2px solid rgba(255,255,255,0.4); border-radius: 6px; z-index: 2; opacity: 0; transition: opacity 0.3s; }
+        .lcd-screen.video-mode { background: #111; }
+        .lcd-screen.video-mode .video-feed, .lcd-screen.video-mode .pip-video { opacity: 1; }
+        .lcd-content { position: relative; z-index: 10; height: 100%; display: flex; flex-direction: column; justify-content: space-between; }
+        .lcd-screen.video-mode .lcd-content { color: #fff; text-shadow: 1px 1px 3px rgba(0,0,0,0.9), 0 0 8px rgba(0,0,0,0.8); }
+        .lcd-screen.video-mode #rx-indicator { color: #4ade80; }
+        .speaker-grille { background: radial-gradient(#111 20%, transparent 25%); background-size: 10px 10px; opacity: 0.8; }
+        @keyframes pulse-tx { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+        .tx-indicator { display: none; }
+        .transmitting .tx-indicator { display: inline-block; animation: pulse-tx 0.8s infinite; color: #d32f2f; text-shadow: 0 0 5px red; }
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
     </style>
 </head>
+<!-- [Gunakan Struktur HTML asli Anda dari index_2.html di sini. Tidak ada perubahan struktur body] -->
 <body class="text-gray-200 antialiased">
-
-    <!-- Main Walkie Talkie Device -->
     <div class="relative w-80 max-w-[95vw] mt-16 mb-8">
         <div class="antenna"></div>
         <div class="volume-knob"></div>
-
         <div class="walkie-body p-6 border-4 border-[#1a2017]">
             <div class="flex justify-between items-center mb-4 text-xs font-bold tracking-widest text-gray-500 uppercase">
                 <span>Comms-Pro VIP 1.1</span>
                 <span class="w-3 h-3 rounded-full bg-red-900 border border-gray-800 shadow-[inset_0_1px_3px_rgba(0,0,0,0.8)]" id="power-led"></span>
             </div>
-
-            <!-- LCD / Video Screen -->
+            <!-- LCD -->
             <div id="lcd" class="lcd-screen rounded-lg h-44 mb-6 text-[#111] transition-all duration-300">
                 <video id="remote-video" class="video-feed" autoplay playsinline></video>
                 <video id="local-video" class="pip-video opacity-0 transition-opacity" autoplay playsinline muted></video>
-                
                 <div class="lcd-content p-3">
                     <div class="flex justify-between items-start">
                         <span id="tx-indicator" class="text-sm font-bold opacity-0 transition-opacity text-red-700">TX</span>
@@ -192,90 +63,48 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Login Panel -->
+            <!-- Login -->
             <div id="login-panel" class="space-y-4 mb-6">
-                <div class="text-center bg-gray-900 p-2 rounded-lg border border-gray-700 shadow-[inset_0_2px_5px_rgba(0,0,0,0.5)]">
-                    <span class="text-[10px] text-gray-500 font-bold block mb-1">OTENTIKASI PEGAWAI</span>
-                </div>
+                <div class="text-center bg-gray-900 p-2 rounded-lg border border-gray-700 shadow-[inset_0_2px_5px_rgba(0,0,0,0.5)]"><span class="text-[10px] text-gray-500 font-bold block mb-1">OTENTIKASI PEGAWAI</span></div>
                 <div class="flex flex-col space-y-2 mt-2">
                     <input type="text" id="login-code-input" placeholder="Masukkan Code Pegawai" class="uppercase w-full bg-[#111] text-blue-500 border border-gray-700 rounded p-2 text-center font-mono text-xl focus:outline-none focus:border-blue-500 shadow-[inset_0_2px_5px_rgba(0,0,0,0.8)]">
-                    <button id="btn-login" class="w-full bg-blue-800 hover:bg-blue-700 active:bg-blue-600 text-white font-bold py-3 px-4 rounded shadow border border-blue-900 transition-colors text-lg tracking-wider">
-                        MASUK
-                    </button>
+                    <button id="btn-login" class="w-full bg-blue-800 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded shadow border border-blue-900 transition-colors text-lg">MASUK</button>
                 </div>
             </div>
-
-            <!-- Setup Panel (Standby / Contact List Mode) -->
+            <!-- Setup Panel -->
             <div id="setup-panel" class="space-y-4 mb-6 hidden">
                 <div id="permission-msg" class="text-center">
                     <p class="text-gray-400 font-mono text-xs mb-4">Mempersiapkan Mikrofon...</p>
-                    <button id="btn-force-connect" class="hidden w-full bg-green-800 hover:bg-green-700 active:bg-green-600 text-white font-bold py-3 px-4 rounded-lg shadow border border-green-900 transition-colors">
-                        TAP UNTUK IZIN MIKROFON
-                    </button>
+                    <button id="btn-force-connect" class="hidden w-full bg-green-800 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg shadow border border-green-900">TAP UNTUK IZIN MIKROFON</button>
                 </div>
-                
                 <div id="dial-panel" class="hidden flex-col">
-                    <div class="flex justify-between items-center bg-gray-900 p-2 rounded-lg border border-gray-700 shadow-[inset_0_2px_5px_rgba(0,0,0,0.5)] mb-3">
-                        <div>
-                            <span class="text-[10px] text-gray-500 font-bold block">ID SAYA:</span>
-                            <div id="my-id-display" class="text-lg font-bold text-green-500 tracking-widest font-mono uppercase leading-tight">----</div>
-                        </div>
-                        <div class="text-right">
-                            <span class="text-[10px] text-gray-500 font-bold block">NAMA:</span>
-                            <div id="employee-name-display" class="text-xs text-gray-300 font-bold uppercase mt-1 max-w-[100px] truncate leading-tight"></div>
-                        </div>
+                    <div class="flex justify-between items-center bg-gray-900 p-2 rounded-lg border border-gray-700 mb-3">
+                        <div><span class="text-[10px] text-gray-500 font-bold block">ID SAYA:</span><div id="my-id-display" class="text-lg font-bold text-green-500 uppercase">----</div></div>
+                        <div class="text-right"><span class="text-[10px] text-gray-500 font-bold block">NAMA:</span><div id="employee-name-display" class="text-xs text-gray-300 font-bold uppercase mt-1 truncate"></div></div>
                     </div>
-                    
-                    <div class="flex flex-col bg-[#0a0a0a] rounded-lg border border-gray-700 shadow-[inset_0_2px_5px_rgba(0,0,0,0.8)] p-2">
-                        <div class="flex justify-between items-center border-b border-gray-800 pb-2 mb-2">
-                            <span class="text-[10px] text-gray-500 font-bold">PILIH KONTAK:</span>
-                            <button id="btn-refresh-contacts" class="text-[10px] bg-gray-800 hover:bg-gray-700 text-gray-300 py-1 px-2 rounded border border-gray-700 transition-colors">
-                                🔄 Segarkan
-                            </button>
-                        </div>
-                        
-                        <ul id="contact-list" class="space-y-1.5 max-h-[140px] overflow-y-auto custom-scrollbar pr-1">
-                            <li class="text-center text-[10px] text-gray-600 py-4">Memuat data...</li>
-                        </ul>
+                    <div class="flex flex-col bg-[#0a0a0a] rounded-lg border border-gray-700 p-2">
+                        <div class="flex justify-between items-center border-b border-gray-800 pb-2 mb-2"><span class="text-[10px] text-gray-500 font-bold">PILIH KONTAK:</span><button id="btn-refresh-contacts" class="text-[10px] bg-gray-800 text-gray-300 py-1 px-2 rounded">🔄 Segarkan</button></div>
+                        <ul id="contact-list" class="space-y-1.5 max-h-[140px] overflow-y-auto custom-scrollbar pr-1"><li class="text-center text-[10px] text-gray-600 py-4">Memuat data...</li></ul>
                     </div>
-
-                    <button id="btn-logout" class="mt-4 text-xs text-gray-500 hover:text-red-400 underline w-full text-center cursor-pointer transition-colors">
-                        Tutup Sesi (Keluar)
-                    </button>
+                    <button id="btn-logout" class="mt-4 text-xs text-gray-500 hover:text-red-400 underline w-full text-center">Tutup Sesi (Keluar)</button>
                 </div>
             </div>
-
             <!-- Active Call Controls -->
             <div id="call-panel" class="hidden mb-6 flex flex-col items-center">
-                <button id="btn-hangup" class="mb-4 text-xs bg-red-900 text-gray-300 py-2 px-6 rounded shadow border border-red-800 hover:text-white hover:bg-red-800 active:bg-red-700 transition-colors flex items-center justify-center space-x-2 w-full max-w-[200px]">
-                    <span class="text-base">✖</span>
-                    <span class="font-bold tracking-wider">TUTUP PANGGILAN</span>
-                </button>
-                
+                <button id="btn-hangup" class="mb-4 text-xs bg-red-900 text-gray-300 py-2 px-6 rounded border border-red-800 flex items-center justify-center space-x-2 w-full max-w-[200px]"><span class="text-base">✖</span><span class="font-bold tracking-wider">TUTUP PANGGILAN</span></button>
                 <div class="flex space-x-2 mb-3">
-                    <button id="btn-toggle-video" class="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 py-1.5 px-3 rounded shadow border border-gray-700 flex items-center space-x-1 transition-colors active:bg-gray-700">
-                        <span id="video-icon">🚫</span>
-                        <span id="video-btn-text">Kamera: OFF</span>
-                    </button>
-                    <button id="btn-toggle-mic" class="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 py-1.5 px-3 rounded shadow border border-gray-700 flex items-center space-x-1 transition-colors active:bg-gray-700">
-                        <span id="mic-icon">🎙️</span>
-                        <span id="mic-btn-text">Mic: ON</span>
-                    </button>
+                    <button id="btn-toggle-video" class="text-xs bg-gray-800 text-gray-300 py-1.5 px-3 rounded flex items-center space-x-1"><span id="video-icon">🚫</span><span id="video-btn-text">Kamera: OFF</span></button>
+                    <button id="btn-toggle-mic" class="text-xs bg-gray-800 text-gray-300 py-1.5 px-3 rounded flex items-center space-x-1"><span id="mic-icon">🎙️</span><span id="mic-btn-text">Mic: ON</span></button>
                 </div>
-                
-                <p class="text-[10px] text-center text-green-400 mb-2 font-mono animate-pulse">BERBICARA BEBAS</p>
-                
-                <div class="w-28 h-28 rounded-full flex flex-col items-center justify-center border-4 border-[#111] bg-[#1a1a1a] shadow-[inset_0_4px_10px_rgba(0,0,0,0.6)] transition-colors">
-                    <span id="mic-status-icon" class="text-green-500 font-bold text-2xl">MIC</span>
-                    <span id="mic-status-text" class="text-green-500 text-xs tracking-widest mt-1 animate-pulse">LIVE</span>
-                </div>
+                <p class="text-[10px] text-center text-green-400 mb-2 animate-pulse">BERBICARA BEBAS</p>
+                <div class="w-28 h-28 rounded-full flex flex-col items-center justify-center border-4 border-[#111] bg-[#1a1a1a] shadow-[inset_0_4px_10px_rgba(0,0,0,0.6)]"><span id="mic-status-icon" class="text-green-500 font-bold text-2xl">MIC</span><span id="mic-status-text" class="text-green-500 text-xs tracking-widest mt-1 animate-pulse">LIVE</span></div>
             </div>
-
             <div class="h-24 w-full speaker-grille rounded-lg border border-gray-900 shadow-[inset_0_2px_10px_rgba(0,0,0,0.8)]"></div>
         </div>
     </div>
-<script type="module">
+
+    <script type="module">
+        // [Inisialisasi Firebase & Supabase Sama Seperti Sebelumnya]
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, updateDoc, deleteDoc, collection, onSnapshot, addDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -284,353 +113,218 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpZ3N6ZnZtYnB2em5vdHlrcnl4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3MzQwMjcsImV4cCI6MjA5OTMxMDAyN30.O0-y9FI_sikkPVig2XNDJ_zlTnfJZv-hRirPurs8yQc';
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        let myId = null;     
-        let myName = null;   
-        let app, db, auth;
-        let appId = 'walkie-talkie-public-rooms';
-        let peerConnection = null;
-        let localStream = null;
-        let remoteStream = null;
-        let roomId = null;
-        let isCaller = false;
-        let unsubscribers = [];
-        let audioContext = null;
-        let isVideoEnabled = false;
-        let isMicEnabled = true;
-        
-        let dataChannel = null;
-        let isRemoteVideoEnabled = false;
-        let contactsSubscription = null;
-        let heartbeatInterval = null;
+        // State Global
+        let myId = null; let myName = null; let app, db, auth; let appId = 'walkie-talkie-public-rooms';
+        let peerConnection = null; let localStream = null; let remoteStream = null; let roomId = null;
+        let isCaller = false; let unsubscribers = []; let audioContext = null;
+        let isVideoEnabled = false; let isMicEnabled = true; let dataChannel = null; let isRemoteVideoEnabled = false;
+        let contactsSubscription = null; let heartbeatInterval = null;
 
         const configuration = {
-            iceServers: [
-                { urls: 'stun:stun1.l.google.com:19302' },
-                { urls: 'stun:stun2.l.google.com:19302' },
-                { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
-                { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' }
-            ],
-            iceCandidatePoolSize: 10
+            iceServers: [ { urls: 'stun:stun1.l.google.com:19302' }, { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' } ]
         };
 
         const ui = {
-            lcd: document.getElementById('lcd'),
-            lcdStatus: document.getElementById('lcd-status'),
-            lcdRoomText: document.getElementById('lcd-room'),
-            statusIcon: document.getElementById('status-icon'),
-            rxIndicator: document.getElementById('rx-indicator'),
-            txIndicator: document.getElementById('tx-indicator'),
-            loginPanel: document.getElementById('login-panel'),
-            loginCodeInput: document.getElementById('login-code-input'),
-            btnLogin: document.getElementById('btn-login'),
-            btnLogout: document.getElementById('btn-logout'),
-            setupPanel: document.getElementById('setup-panel'),
-            permissionMsg: document.getElementById('permission-msg'),
-            dialPanel: document.getElementById('dial-panel'),
-            callPanel: document.getElementById('call-panel'),
-            btnForceConnect: document.getElementById('btn-force-connect'),
-            btnRefreshContacts: document.getElementById('btn-refresh-contacts'),
-            contactList: document.getElementById('contact-list'),
-            btnHangup: document.getElementById('btn-hangup'),
-            btnToggleVideo: document.getElementById('btn-toggle-video'),
-            videoIcon: document.getElementById('video-icon'),
-            videoBtnText: document.getElementById('video-btn-text'),
-            btnToggleMic: document.getElementById('btn-toggle-mic'),
-            micIcon: document.getElementById('mic-icon'),
-            micBtnText: document.getElementById('mic-btn-text'),
-            micStatusIcon: document.getElementById('mic-status-icon'),
-            micStatusText: document.getElementById('mic-status-text'),
-            remoteVideo: document.getElementById('remote-video'),
-            localVideo: document.getElementById('local-video'),
-            powerLed: document.getElementById('power-led'),
-            myIdDisplay: document.getElementById('my-id-display'),
+            lcd: document.getElementById('lcd'), lcdStatus: document.getElementById('lcd-status'), lcdRoomText: document.getElementById('lcd-room'),
+            statusIcon: document.getElementById('status-icon'), rxIndicator: document.getElementById('rx-indicator'), txIndicator: document.getElementById('tx-indicator'),
+            loginPanel: document.getElementById('login-panel'), loginCodeInput: document.getElementById('login-code-input'), btnLogin: document.getElementById('btn-login'),
+            btnLogout: document.getElementById('btn-logout'), setupPanel: document.getElementById('setup-panel'), permissionMsg: document.getElementById('permission-msg'),
+            dialPanel: document.getElementById('dial-panel'), callPanel: document.getElementById('call-panel'), btnForceConnect: document.getElementById('btn-force-connect'),
+            btnRefreshContacts: document.getElementById('btn-refresh-contacts'), contactList: document.getElementById('contact-list'), btnHangup: document.getElementById('btn-hangup'),
+            btnToggleVideo: document.getElementById('btn-toggle-video'), videoIcon: document.getElementById('video-icon'), videoBtnText: document.getElementById('video-btn-text'),
+            btnToggleMic: document.getElementById('btn-toggle-mic'), micIcon: document.getElementById('mic-icon'), micBtnText: document.getElementById('mic-btn-text'),
+            micStatusIcon: document.getElementById('mic-status-icon'), micStatusText: document.getElementById('mic-status-text'), remoteVideo: document.getElementById('remote-video'),
+            localVideo: document.getElementById('local-video'), powerLed: document.getElementById('power-led'), myIdDisplay: document.getElementById('my-id-display'),
             employeeNameDisplay: document.getElementById('employee-name-display')
         };
 
+        /* =======================================================
+           CAPACITOR FOREGROUND SERVICE (LEBIH HEMAT)
+           ======================================================= */
+        function initBackgroundMode() {
+            if (window.cordova && window.cordova.plugins && window.cordova.plugins.backgroundMode) {
+                const bgMode = window.cordova.plugins.backgroundMode;
+                bgMode.enable();
+                bgMode.overrideBackButton();
+                bgMode.setDefaults({
+                    title: 'Comms-Pro VIP Aktif',
+                    text: 'Menunggu Panggilan Masuk...',
+                    hidden: false, silent: true // Silent agar tidak berbunyi saat muncul
+                });
+                
+                // HEMAT BATERAI: Matikan stream mic saat masuk background & standby
+                bgMode.on('activate', function() {
+                    bgMode.disableWebViewOptimizations(); 
+                    if (ui.callPanel.classList.contains('hidden')) {
+                        // Jika tidak ada panggilan, hentikan mic fisik tapi biarkan koneksi Supabase/Firebase
+                        stopLocalMedia();
+                    }
+                });
+                
+                bgMode.on('deactivate', function() {
+                    // Aplikasi dibuka kembali
+                    if (ui.callPanel.classList.contains('hidden')) {
+                         startDevice(); // minta mic lagi untuk standby
+                    }
+                });
+            }
+        }
+        
+        function updateBackgroundNotification(text) {
+             if (window.cordova && window.cordova.plugins && window.cordova.plugins.backgroundMode) {
+                 window.cordova.plugins.backgroundMode.configure({ text: text });
+             }
+        }
+
+        // [Fungsi Helper]
         function createEmptyVideoTrack({ width = 640, height = 480 } = {}) {
-            const canvas = document.createElement('canvas');
-            canvas.width = width;
-            canvas.height = height;
-            const context = canvas.getContext('2d');
-            context.fillStyle = '#000000'; 
-            context.fillRect(0, 0, width, height);
-            const stream = canvas.captureStream(1);
-            return stream.getVideoTracks()[0];
+            const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height;
+            canvas.getContext('2d').fillRect(0, 0, width, height); return canvas.captureStream(1).getVideoTracks()[0];
         }
 
         function startHeartbeat() {
             if (heartbeatInterval) clearInterval(heartbeatInterval);
             heartbeatInterval = setInterval(async () => {
-                if (myId) {
-                    await supabase.from('employees').update({ 
-                        last_seen: new Date().toISOString() 
-                    }).eq('code', myId);
-                }
+                if (myId) await supabase.from('employees').update({ last_seen: new Date().toISOString() }).eq('code', myId);
             }, 45000); 
         }
 
-        function stopHeartbeat() {
-            if (heartbeatInterval) {
-                clearInterval(heartbeatInterval);
-                heartbeatInterval = null;
-            }
-        }
+        function stopHeartbeat() { if (heartbeatInterval) clearInterval(heartbeatInterval); heartbeatInterval = null; }
 
         function subscribeToEmployeeStatus() {
             if (contactsSubscription) return;
-            contactsSubscription = supabase
-                .channel('employee-status-changes')
-                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'employees' }, () => {
-                    loadContacts();
-                })
-                .subscribe();
+            contactsSubscription = supabase.channel('employee-status-changes').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'employees' }, () => { loadContacts(); }).subscribe();
         }
 
-        function updateVideoModeUI() {
-            if (isVideoEnabled || isRemoteVideoEnabled) {
-                ui.lcd.classList.add('video-mode');
-                ui.remoteVideo.play().catch(() => {});
-            } else {
-                ui.lcd.classList.remove('video-mode');
-            }
-        }
-
-        function setupDataChannel(channel) {
-            channel.onmessage = (event) => {
-                try {
-                    const data = JSON.parse(event.data);
-                    if (data.type === 'VIDEO_TOGGLE') {
-                        isRemoteVideoEnabled = data.state;
-                        updateVideoModeUI();
-                    }
-                } catch(e) {}
-            };
-        }
-
-        async function loadContacts() {
-            const { data, error } = await supabase
-                .from('employees')
-                .select('code, name, is_online')
-                .order('name', { ascending: true });
-
-            if (error) {
-                ui.contactList.innerHTML = '<li class="text-center text-[10px] text-red-500 py-4">Gagal memuat kontak</li>';
-                return;
-            }
-
-            ui.contactList.innerHTML = '';
-            const otherEmployees = data.filter(emp => emp.code !== myId);
-            
-            if (otherEmployees.length === 0) {
-                ui.contactList.innerHTML = '<li class="text-center text-[10px] text-gray-600 py-4">Belum ada pegawai lain</li>';
-                return;
-            }
-
-            otherEmployees.forEach(emp => {
-                const li = document.createElement('li');
-                li.className = 'bg-[#1a1a1a] p-2 rounded border border-gray-700 flex justify-between items-center cursor-pointer hover:border-green-500 hover:bg-[#222] transition-colors';
-                
-                let statusText = 'OFF';
-                let dotColor = 'text-gray-600';
-                
-                if (emp.is_online === 'busy') {
-                    statusText = 'PANGGILAN';
-                    dotColor = 'text-red-500';
-                } else if (emp.is_online === 'online') {
-                    statusText = 'STANDBY';
-                    dotColor = 'text-green-500';
-                }
-
-                li.innerHTML = `
-                    <div class="flex flex-col">
-                        <span class="text-xs font-bold text-gray-200 uppercase">${emp.code}</span>
-                        <span class="text-[9px] text-gray-400 capitalize">${emp.name}</span>
-                    </div>
-                    <div class="text-[10px] font-bold ${dotColor} flex items-center space-x-1 bg-black px-1.5 py-0.5 rounded shadow-[inset_0_1px_3px_rgba(0,0,0,0.8)]">
-                        <span>●</span> <span class="tracking-widest">${statusText}</span>
-                    </div>
-                `;
-                
-                li.onclick = () => { initiateCall(emp.code); };
-                ui.contactList.appendChild(li);
-            });
-        }
-
-        ui.btnRefreshContacts.addEventListener('click', () => {
-            ui.contactList.innerHTML = '<li class="text-center text-[10px] text-gray-600 py-4">Memuat data...</li>';
-            loadContacts();
-        });
-
-
-        async function checkAuth() {
-            const storedCode = localStorage.getItem('walkie_emp_code');
-            const storedName = localStorage.getItem('walkie_emp_name');
-
-            if (storedCode && storedName) {
-                myId = storedCode;
-                myName = storedName;
-                ui.myIdDisplay.innerText = myId;
-                ui.employeeNameDisplay.innerText = myName;
-                
-                ui.loginPanel.classList.add('hidden');
-                ui.setupPanel.classList.remove('hidden');
-                
-                await supabase.from('employees').update({ 
-                    is_online: 'online', 
-                    last_seen: new Date().toISOString() 
-                }).eq('code', myId);
-                
-                startHeartbeat(); 
-                initFirebaseApp();
-            } else {
-                ui.powerLed.classList.add('bg-red-900');
-                updateLCD("LOGIN", "...", "●");
-            }
-        }
-
-        ui.btnLogin.addEventListener('click', async () => {
-            const code = ui.loginCodeInput.value.trim().toUpperCase();
-            if(!code) return;
-
-            ui.btnLogin.innerText = "MEMVERIFIKASI...";
-            
-            const { data, error } = await supabase
-                .from('employees')
-                .select('code, name, is_online')
-                .eq('code', code)
-                .single();
-
-            if (error || !data) {
-                alert("Kode Pegawai tidak ditemukan!");
-                ui.btnLogin.innerText = "MASUK";
-                return;
-            }
-
-            if (data.is_online !== 'offline') {
-                const paksaLogin = confirm("Kode ini sedang AKTIF di perangkat lain.\n(Jika perangkat sebelumnya mati mendadak, tunggu 1-2 menit hingga server membersihkan sesi otomatis). \n\nApakah Anda ingin mencoba memaksa masuk sekarang?");
-                if(!paksaLogin) {
-                    ui.btnLogin.innerText = "MASUK";
-                    return;
-                }
-            }
-
-            await supabase.from('employees').update({ 
-                is_online: 'online', 
-                last_seen: new Date().toISOString() 
-            }).eq('code', code);
-            
-            localStorage.setItem('walkie_emp_code', data.code);
-            localStorage.setItem('walkie_emp_name', data.name);
-            ui.loginCodeInput.value = "";
-            checkAuth();
-        });
-
-        async function performLogout() {
-            stopHeartbeat();
-            if (contactsSubscription) {
-                supabase.removeChannel(contactsSubscription);
-                contactsSubscription = null;
-            }
-            if (myId) {
-                await supabase.from('employees').update({ 
-                    is_online: 'offline', 
-                    last_seen: new Date().toISOString() 
-                }).eq('code', myId);
-            }
-            await cleanupConnection();
-            localStorage.removeItem('walkie_emp_code');
-            localStorage.removeItem('walkie_emp_name');
-            window.location.reload();
-        }
-        ui.btnLogout.addEventListener('click', performLogout);
-
-        async function initFirebaseApp() {
-            try {
-                const myFirebaseConfig = {
-                    apiKey: "AIzaSyB8Z9x6ovw6AW-bvCJr02Gdzb1-WKMPefw",
-                    authDomain: "walkitalki-6985b.firebaseapp.com",
-                    projectId: "walkitalki-6985b",
-                    storageBucket: "walkitalki-6985b.firebasestorage.app",
-                    messagingSenderId: "503583235135",
-                    appId: "1:503583235135:web:7fa355d440ce17cf402c8a"
-                };
-                
-                app = initializeApp(myFirebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-
-                await signInAnonymously(auth); 
-                
-                ui.powerLed.classList.remove('bg-red-900');
-                ui.powerLed.classList.add('bg-green-500', 'shadow-[0_0_8px_#4ade80]');
-                ui.lcd.classList.add('active');
-                
-                startDevice();
-            } catch (error) {
-                alert("Gagal terhubung: " + error.message);
-                updateLCD("ERR: AUTH", "---", "✖");
-            }
-        }
-
-        function initAudioContext() {
-            if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            if (audioContext.state === 'suspended') audioContext.resume();
-        }
-
+        /* =======================================================
+           MANAJEMEN MEDIA (Dinamis Aktifkan Mic)
+           ======================================================= */
         async function openUserMedia() {
             try {
-                const constraints = {
-                    video: false, 
-                    audio: { echoCancellation: true, noiseSuppression: true }
-                };
+                if(localStream) stopLocalMedia(); // Bersihkan yang lama
+                
+                const constraints = { video: false, audio: { echoCancellation: true, noiseSuppression: true } };
+                // Memaksa meminta izin ulang jika di dalam Webview Native
                 localStream = await navigator.mediaDevices.getUserMedia(constraints);
-                localStream.getAudioTracks().forEach(track => { track.enabled = false; });
                 return true;
             } catch (error) {
+                console.error("Gagal akses media:", error);
                 return false;
+            }
+        }
+
+        function stopLocalMedia() {
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
             }
         }
 
         async function startDevice() {
             initAudioContext();
-            if (!localStream) {
-                updateLCD("MINTA IZIN", "...", "⧖");
-                const hasMedia = await openUserMedia();
-                if (!hasMedia) {
-                    ui.permissionMsg.classList.remove('hidden');
-                    ui.btnForceConnect.classList.remove('hidden');
-                    ui.dialPanel.classList.add('hidden');
-                    updateLCD("BUTUH TAP", "---", "✖");
-                    return;
-                }
-            }
-
-            ui.permissionMsg.classList.add('hidden');
-            ui.btnForceConnect.classList.add('hidden');
-            ui.dialPanel.classList.remove('hidden');
+            updateLCD("MINTA IZIN", "...", "⧖");
             
-            await loadContacts();
-            subscribeToEmployeeStatus(); 
-            connectToRoom(myId); 
+            const hasMedia = await openUserMedia();
+            if (!hasMedia) {
+                ui.permissionMsg.classList.remove('hidden'); ui.btnForceConnect.classList.remove('hidden'); ui.dialPanel.classList.add('hidden');
+                updateLCD("BUTUH TAP", "---", "✖");
+                return;
+            }
+            
+            // Saat standby, matikan track audio agar hemat baterai, tapi siap dipakai
+            localStream.getAudioTracks().forEach(track => { track.enabled = false; });
+
+            ui.permissionMsg.classList.add('hidden'); ui.btnForceConnect.classList.add('hidden'); ui.dialPanel.classList.remove('hidden');
+            await loadContacts(); subscribeToEmployeeStatus(); connectToRoom(myId); 
         }
 
+        // [Fungsi Render UI]
+        function updateVideoModeUI() {
+            if (isVideoEnabled || isRemoteVideoEnabled) { ui.lcd.classList.add('video-mode'); ui.remoteVideo.play().catch(() => {}); } 
+            else { ui.lcd.classList.remove('video-mode'); }
+        }
+        function updateLCD(status, roomStr, icon) { ui.lcdStatus.innerText = status; ui.lcdRoomText.innerText = roomStr || "---"; ui.statusIcon.innerText = icon || ""; }
+        function showCallPanel(activeRoomId) { ui.setupPanel.classList.add('hidden'); ui.callPanel.classList.remove('hidden'); ui.lcdRoomText.innerText = activeRoomId; }
+        function showSetupPanel() { ui.setupPanel.classList.remove('hidden'); ui.callPanel.classList.add('hidden'); ui.lcdRoomText.innerText = myId; ui.lcd.classList.remove('video-mode'); if(myId) loadContacts(); }
+
+        async function loadContacts() {
+            const { data, error } = await supabase.from('employees').select('code, name, is_online').order('name', { ascending: true });
+            if (error) { ui.contactList.innerHTML = '<li class="text-center text-[10px] text-red-500 py-4">Gagal memuat kontak</li>'; return; }
+            ui.contactList.innerHTML = ''; const otherEmployees = data.filter(emp => emp.code !== myId);
+            if (otherEmployees.length === 0) { ui.contactList.innerHTML = '<li class="text-center text-[10px] text-gray-600 py-4">Belum ada pegawai lain</li>'; return; }
+
+            otherEmployees.forEach(emp => {
+                const li = document.createElement('li');
+                li.className = 'bg-[#1a1a1a] p-2 rounded border border-gray-700 flex justify-between items-center cursor-pointer hover:border-green-500 hover:bg-[#222] transition-colors';
+                let statusText = 'OFF'; let dotColor = 'text-gray-600';
+                if (emp.is_online === 'busy') { statusText = 'PANGGILAN'; dotColor = 'text-red-500'; } else if (emp.is_online === 'online') { statusText = 'STANDBY'; dotColor = 'text-green-500'; }
+                li.innerHTML = `<div class="flex flex-col"><span class="text-xs font-bold text-gray-200 uppercase">${emp.code}</span><span class="text-[9px] text-gray-400 capitalize">${emp.name}</span></div><div class="text-[10px] font-bold ${dotColor} flex items-center space-x-1 bg-black px-1.5 py-0.5 rounded shadow-[inset_0_1px_3px_rgba(0,0,0,0.8)]"><span>●</span> <span class="tracking-widest">${statusText}</span></div>`;
+                li.onclick = () => { initiateCall(emp.code); };
+                ui.contactList.appendChild(li);
+            });
+        }
+        ui.btnRefreshContacts.addEventListener('click', () => { ui.contactList.innerHTML = '<li class="text-center text-[10px] text-gray-600 py-4">Memuat data...</li>'; loadContacts(); });
+
+        /* =======================================================
+           OTENTIKASI
+           ======================================================= */
+        async function checkAuth() {
+            const storedCode = localStorage.getItem('walkie_emp_code'); const storedName = localStorage.getItem('walkie_emp_name');
+            if (storedCode && storedName) {
+                myId = storedCode; myName = storedName; ui.myIdDisplay.innerText = myId; ui.employeeNameDisplay.innerText = myName;
+                ui.loginPanel.classList.add('hidden'); ui.setupPanel.classList.remove('hidden');
+                await supabase.from('employees').update({ is_online: 'online', last_seen: new Date().toISOString() }).eq('code', myId);
+                startHeartbeat(); initFirebaseApp();
+                initBackgroundMode(); // Aktifkan Foreground Service HANYA setelah login
+            } else { ui.powerLed.classList.add('bg-red-900'); updateLCD("LOGIN", "...", "●"); }
+        }
+
+        ui.btnLogin.addEventListener('click', async () => {
+            const code = ui.loginCodeInput.value.trim().toUpperCase(); if(!code) return;
+            ui.btnLogin.innerText = "MEMVERIFIKASI...";
+            const { data, error } = await supabase.from('employees').select('code, name, is_online').eq('code', code).single();
+            if (error || !data) { alert("Kode Pegawai tidak ditemukan!"); ui.btnLogin.innerText = "MASUK"; return; }
+            if (data.is_online !== 'offline') {
+                if(!confirm("Kode ini sedang AKTIF di perangkat lain.\nPaksa masuk sekarang?")) { ui.btnLogin.innerText = "MASUK"; return; }
+            }
+            localStorage.setItem('walkie_emp_code', data.code); localStorage.setItem('walkie_emp_name', data.name);
+            ui.loginCodeInput.value = ""; checkAuth();
+        });
+
+        ui.btnLogout.addEventListener('click', async () => {
+            stopHeartbeat();
+            if (contactsSubscription) { supabase.removeChannel(contactsSubscription); contactsSubscription = null; }
+            if (myId) await supabase.from('employees').update({ is_online: 'offline', last_seen: new Date().toISOString() }).eq('code', myId);
+            await cleanupConnection();
+            localStorage.removeItem('walkie_emp_code'); localStorage.removeItem('walkie_emp_name');
+            if(window.cordova && window.cordova.plugins && window.cordova.plugins.backgroundMode) window.cordova.plugins.backgroundMode.disable();
+            window.location.reload();
+        });
+
+        async function initFirebaseApp() {
+            try {
+                // Konfigurasi Asli Anda
+                const myFirebaseConfig = { apiKey: "AIzaSyB8Z9x6ovw6AW-bvCJr02Gdzb1-WKMPefw", authDomain: "walkitalki-6985b.firebaseapp.com", projectId: "walkitalki-6985b", storageBucket: "walkitalki-6985b.firebasestorage.app", messagingSenderId: "503583235135", appId: "1:503583235135:web:7fa355d440ce17cf402c8a" };
+                app = initializeApp(myFirebaseConfig); db = getFirestore(app); auth = getAuth(app);
+                await signInAnonymously(auth); 
+                ui.powerLed.classList.remove('bg-red-900'); ui.powerLed.classList.add('bg-green-500', 'shadow-[0_0_8px_#4ade80]'); ui.lcd.classList.add('active');
+                startDevice();
+            } catch (error) { updateLCD("ERR: AUTH", "---", "✖"); }
+        }
+        function initAudioContext() { if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)(); if (audioContext.state === 'suspended') audioContext.resume(); }
+
+        /* =======================================================
+           LOGIKA WEBRTC & PERBAIKAN MIC OTOMATIS
+           ======================================================= */
         async function connectToRoom(targetRoomId) {
             if (!auth.currentUser) return;
-            
-            roomId = targetRoomId;
-            const isMyOwnRoom = (roomId === myId);
+            roomId = targetRoomId; const isMyOwnRoom = (roomId === myId);
             
             updateLCD(isMyOwnRoom ? "STANDBY" : "CALLING...", roomId, "⧖");
+            updateBackgroundNotification(isMyOwnRoom ? "Menunggu Panggilan Masuk..." : `Panggilan Aktif: ${roomId}`);
             
-            if (isMyOwnRoom) showSetupPanel();
-            else showCallPanel(roomId);
-
-            if (!isMyOwnRoom && myId) {
-                supabase.from('employees').update({ 
-                    is_online: 'busy', 
-                    last_seen: new Date().toISOString() 
-                }).eq('code', myId);
-            }
+            if (isMyOwnRoom) showSetupPanel(); else showCallPanel(roomId);
+            if (!isMyOwnRoom && myId) supabase.from('employees').update({ is_online: 'busy', last_seen: new Date().toISOString() }).eq('code', myId);
 
             const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
             
@@ -638,478 +332,215 @@
                 peerConnection = new RTCPeerConnection(configuration);
                 setupWebRTCListeners();
                 
-                // ========================================================
-                // [PERBAIKAN] Tambahkan Dummy Video ke localStream
-                // ========================================================
+                // [PENTING] Memaksa Mic Terbuka saat membuat koneksi ke Room
+                if (!localStream) {
+                    await openUserMedia();
+                }
+
                 if (localStream) {
-                    if (localStream.getVideoTracks().length === 0) {
-                        const dummyVideoTrack = createEmptyVideoTrack();
-                        localStream.addTrack(dummyVideoTrack);
-                    }
-                    
-                    localStream.getTracks().forEach(track => {
-                        peerConnection.addTrack(track, localStream);
-                    });
+                    if (localStream.getVideoTracks().length === 0) localStream.addTrack(createEmptyVideoTrack());
+                    localStream.getTracks().forEach(track => { peerConnection.addTrack(track, localStream); });
                 }
 
                 let roomSnap = await getDoc(roomRef);
-
                 if (!roomSnap.exists()) {
+                    // Menjadi Caller (Standby di Room Sendiri)
                     try {
                         await setDoc(roomRef, { createdAt: new Date().toISOString(), creator: auth.currentUser.uid });
-                        isCaller = true;
-                        
-                        dataChannel = peerConnection.createDataChannel("signaling");
-                        setupDataChannel(dataChannel);
+                        isCaller = true; dataChannel = peerConnection.createDataChannel("signaling");
+                        dataChannel.onmessage = (e) => { try { const d = JSON.parse(e.data); if (d.type === 'VIDEO_TOGGLE') { isRemoteVideoEnabled = d.state; updateVideoModeUI(); } } catch(err){} };
                         
                         const unsubRoom = onSnapshot(roomRef, async snapshot => {
                             if (!peerConnection) return; 
-                            if (!snapshot.exists()) {
-                                handleDisconnect();
-                                return;
-                            }
+                            if (!snapshot.exists()) { handleDisconnect(); return; }
                             const data = snapshot.data();
+                            // Jika ada yang menjawab (Answer), ini berarti ada Panggilan Masuk!
                             if (!peerConnection.currentRemoteDescription && data && data.answer) {
-                                try { await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer)); } catch (e) {}
+                                try { 
+                                    await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer)); 
+                                    // BUKA MIC KARENA ADA YANG MEMANGGIL
+                                    activateMicOtomatis();
+                                } catch (e) {}
                             }
                         });
                         unsubscribers.push(unsubRoom);
-
                         const callerCandidatesCollection = collection(roomRef, 'callerCandidates');
-                        peerConnection.addEventListener('icecandidate', event => {
-                            if (event.candidate) addDoc(callerCandidatesCollection, event.candidate.toJSON());
-                        });
-
-                        const offer = await peerConnection.createOffer();
-                        await peerConnection.setLocalDescription(offer);
-                        await updateDoc(roomRef, { offer: { type: offer.type, sdp: offer.sdp } });
-                        
+                        peerConnection.addEventListener('icecandidate', event => { if (event.candidate) addDoc(callerCandidatesCollection, event.candidate.toJSON()); });
+                        const offer = await peerConnection.createOffer(); await peerConnection.setLocalDescription(offer); await updateDoc(roomRef, { offer: { type: offer.type, sdp: offer.sdp } });
                         const calleeCandidatesCollection = collection(roomRef, 'calleeCandidates');
                         const unsubCallee = onSnapshot(calleeCandidatesCollection, snapshot => {
                             if (!peerConnection) return;
-                            snapshot.docChanges().forEach(async change => {
-                                if (change.type === 'added' && peerConnection.remoteDescription && peerConnection.remoteDescription.type) {
-                                    try { await peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data())); } catch(e) {}
-                                }
-                            });
+                            snapshot.docChanges().forEach(async change => { if (change.type === 'added' && peerConnection.remoteDescription) { try { await peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data())); } catch(e) {} } });
                         });
                         unsubscribers.push(unsubCallee);
                         return; 
-                    } catch (createErr) {
-                        roomSnap = await getDoc(roomRef);
-                    }
+                    } catch (createErr) { roomSnap = await getDoc(roomRef); }
                 }
 
+                // Menjadi Callee (Menjawab panggilan ke room orang lain)
                 isCaller = false;
                 const unsubRoom = onSnapshot(roomRef, async snapshot => {
                     if (!peerConnection) return;
-                    if (!snapshot.exists()) {
-                        handleDisconnect();
-                        return;
-                    }
-
+                    if (!snapshot.exists()) { handleDisconnect(); return; }
                     const roomData = snapshot.data();
                     if (roomData.offer && !peerConnection.currentRemoteDescription) {
                         try {
-                            if (myId) {
-                                supabase.from('employees').update({ 
-                                    is_online: 'busy', 
-                                    last_seen: new Date().toISOString() 
-                                }).eq('code', myId);
-                            }
-
+                            if (myId) supabase.from('employees').update({ is_online: 'busy', last_seen: new Date().toISOString() }).eq('code', myId);
                             await peerConnection.setRemoteDescription(new RTCSessionDescription(roomData.offer));
-                            const answer = await peerConnection.createAnswer();
-                            await peerConnection.setLocalDescription(answer);
-                            await updateDoc(roomRef, { answer: { type: answer.type, sdp: answer.sdp } });
+                            const answer = await peerConnection.createAnswer(); await peerConnection.setLocalDescription(answer); await updateDoc(roomRef, { answer: { type: answer.type, sdp: answer.sdp } });
                         } catch(e) {}
                     }
                 });
                 unsubscribers.push(unsubRoom);
-
                 const callerCandidatesCollection = collection(roomRef, 'callerCandidates');
                 const unsubCaller = onSnapshot(callerCandidatesCollection, snapshot => {
                     if (!peerConnection) return;
-                    snapshot.docChanges().forEach(async change => {
-                        if (change.type === 'added' && peerConnection.remoteDescription && peerConnection.remoteDescription.type) {
-                            try { await peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data())); } catch(e) {}
-                        }
-                    });
+                    snapshot.docChanges().forEach(async change => { if (change.type === 'added' && peerConnection.remoteDescription) { try { await peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data())); } catch(e) {} } });
                 });
                 unsubscribers.push(unsubCaller);
-
                 const calleeCandidatesCollection = collection(roomRef, 'calleeCandidates');
-                peerConnection.addEventListener('icecandidate', event => {
-                    if (event.candidate) addDoc(calleeCandidatesCollection, event.candidate.toJSON());
-                });
+                peerConnection.addEventListener('icecandidate', event => { if (event.candidate) addDoc(calleeCandidatesCollection, event.candidate.toJSON()); });
 
                 if (roomSnap.exists() && roomSnap.data().offer && !peerConnection.currentRemoteDescription) {
                     const roomData = roomSnap.data();
-                    
-                    if (myId) {
-                        supabase.from('employees').update({ 
-                            is_online: 'busy', 
-                            last_seen: new Date().toISOString() 
-                        }).eq('code', myId);
-                    }
-
+                    if (myId) supabase.from('employees').update({ is_online: 'busy', last_seen: new Date().toISOString() }).eq('code', myId);
                     await peerConnection.setRemoteDescription(new RTCSessionDescription(roomData.offer));
-                    const answer = await peerConnection.createAnswer();
-                    await peerConnection.setLocalDescription(answer);
-                    await updateDoc(roomRef, { answer: { type: answer.type, sdp: answer.sdp } });
+                    const answer = await peerConnection.createAnswer(); await peerConnection.setLocalDescription(answer); await updateDoc(roomRef, { answer: { type: answer.type, sdp: answer.sdp } });
                 }
-            } catch (err) {
-                handleDisconnect();
-            }
+            } catch (err) { handleDisconnect(); }
+        }
+
+        // FUNGSI KHUSUS: Mengaktifkan Mic Otomatis Saat Terhubung
+        async function activateMicOtomatis() {
+             if (window.cordova && window.cordova.plugins && window.cordova.plugins.backgroundMode) {
+                  // Membangunkan layar HP jika terkunci saat panggilan masuk
+                  window.cordova.plugins.backgroundMode.wakeUp();
+                  window.cordova.plugins.backgroundMode.unlock(); 
+             }
+             
+             // Pastikan akses mic tersedia jika sebelumnya dibersihkan oleh hemat baterai
+             if(!localStream || localStream.getAudioTracks().length === 0) {
+                 await openUserMedia();
+             }
+
+             if (localStream) {
+                  localStream.getAudioTracks().forEach(track => { track.enabled = true; });
+                  isMicEnabled = true;
+                  ui.micIcon.innerText = "🎙️"; ui.micBtnText.innerText = "Mic: ON";
+                  ui.micStatusText.innerText = "LIVE"; ui.micStatusIcon.className = "text-green-500 font-bold text-2xl"; ui.micStatusText.className = "text-green-500 text-xs tracking-widest mt-1 animate-pulse";
+             }
         }
 
         function setupWebRTCListeners() {
-            peerConnection.addEventListener('datachannel', event => {
-                dataChannel = event.channel;
-                setupDataChannel(dataChannel);
-            });
-
+            peerConnection.addEventListener('datachannel', event => { dataChannel = event.channel; dataChannel.onmessage = (e) => { try { const d = JSON.parse(e.data); if (d.type === 'VIDEO_TOGGLE') { isRemoteVideoEnabled = d.state; updateVideoModeUI(); } } catch(err){} }; });
             peerConnection.addEventListener('track', event => {
-                if (!remoteStream) {
-                    remoteStream = new MediaStream();
-                    ui.remoteVideo.srcObject = remoteStream;
-                }
-                
-                if (!remoteStream.getTracks().find(t => t.id === event.track.id)) {
-                    remoteStream.addTrack(event.track);
-                }
-                
+                if (!remoteStream) { remoteStream = new MediaStream(); ui.remoteVideo.srcObject = remoteStream; }
+                if (!remoteStream.getTracks().find(t => t.id === event.track.id)) { remoteStream.addTrack(event.track); }
                 ui.remoteVideo.play().catch(() => {});
             });
-
             peerConnection.addEventListener('connectionstatechange', () => {
                 if (peerConnection.connectionState === 'disconnected' || peerConnection.connectionState === 'failed') {
                     handleDisconnect();
                 } else if (peerConnection.connectionState === 'connected') {
-                    setupAudioLevelMonitor();
-                    updateLCD("CONNECTED", roomId, "✔");
-                    showCallPanel(roomId);
+                    setupAudioLevelMonitor(); updateLCD("CONNECTED", roomId, "✔"); showCallPanel(roomId);
+                    if (myId) supabase.from('employees').update({ is_online: 'busy', last_seen: new Date().toISOString() }).eq('code', myId);
                     
-                    if (myId) {
-                        supabase.from('employees').update({ 
-                            is_online: 'busy', 
-                            last_seen: new Date().toISOString() 
-                        }).eq('code', myId);
-                    }
-                    
-                    if (localStream) {
-                        localStream.getAudioTracks().forEach(track => { track.enabled = true; });
-                        
-                        isMicEnabled = true;
-                        ui.micIcon.innerText = "🎙️";
-                        ui.micBtnText.innerText = "Mic: ON";
-                        ui.micStatusText.innerText = "LIVE";
-                        ui.micStatusIcon.className = "text-green-500 font-bold text-2xl";
-                        ui.micStatusText.className = "text-green-500 text-xs tracking-widest mt-1 animate-pulse";
-                    }
+                    // OTOMATIS AKTIFKAN MIC KETIKA KONEKSI SUKSES (Bahkan jika Kamera Off)
+                    activateMicOtomatis();
                 }
             });
         }
 
         function handleDisconnect() {
             updateLCD("DROPPED", "---", "✖");
-            setTimeout(() => {
-                cleanupConnection();
-                connectToRoom(myId); 
-            }, 500);
+            updateBackgroundNotification("Menunggu Panggilan Masuk...");
+            setTimeout(() => { cleanupConnection(); connectToRoom(myId); }, 500);
         }
 
         async function cleanupConnection() {
-            unsubscribers.forEach(unsub => unsub());
-            unsubscribers = [];
-
-            if (dataChannel) {
-                dataChannel.close();
-                dataChannel = null;
-            }
-            isRemoteVideoEnabled = false;
-
-            if (peerConnection) {
-                peerConnection.close();
-                peerConnection = null;
-            }
+            unsubscribers.forEach(unsub => unsub()); unsubscribers = [];
+            if (dataChannel) { dataChannel.close(); dataChannel = null; } isRemoteVideoEnabled = false;
+            if (peerConnection) { peerConnection.close(); peerConnection = null; }
+            if (myId) supabase.from('employees').update({ is_online: 'online', last_seen: new Date().toISOString() }).eq('code', myId);
             
-            if (myId) {
-                supabase.from('employees').update({ 
-                    is_online: 'online', 
-                    last_seen: new Date().toISOString() 
-                }).eq('code', myId);
-            }
-
-            if (localStream) {
-                const videoTracks = localStream.getVideoTracks();
-                videoTracks.forEach(track => {
-                    track.stop();
-                    localStream.removeTrack(track);
-                });
-                
-                localStream.getAudioTracks().forEach(track => { track.enabled = false; });
-            }
-
-            remoteStream = null;
-            ui.remoteVideo.srcObject = null;
-            ui.localVideo.srcObject = null;
+            // HEMAT DAYA: Matikan stream saat koneksi WebRTC putus
+            stopLocalMedia();
             
-            isVideoEnabled = false;
-            ui.videoIcon.innerText = "🚫";
-            ui.videoBtnText.innerText = "Kamera: OFF";
-            ui.localVideo.classList.remove('opacity-100');
-            ui.localVideo.classList.add('opacity-0');
-            updateVideoModeUI();
-
-            ui.rxIndicator.style.opacity = '0';
-            ui.txIndicator.style.opacity = '0';
-
-            if (roomId && auth.currentUser) {
-                try { deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId)); } catch(e) {}
-            }
-            roomId = null;
-            isCaller = false;
+            remoteStream = null; ui.remoteVideo.srcObject = null; ui.localVideo.srcObject = null;
+            isVideoEnabled = false; ui.videoIcon.innerText = "🚫"; ui.videoBtnText.innerText = "Kamera: OFF"; ui.localVideo.classList.remove('opacity-100'); ui.localVideo.classList.add('opacity-0'); updateVideoModeUI();
+            ui.rxIndicator.style.opacity = '0'; ui.txIndicator.style.opacity = '0';
+            if (roomId && auth.currentUser) { try { deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId)); } catch(e) {} }
+            roomId = null; isCaller = false;
         }
 
         async function initiateCall(targetCode) {
             if (targetCode === myId) return;
-
-            const { data, error } = await supabase
-                .from('employees')
-                .select('is_online')
-                .eq('code', targetCode)
-                .single();
-
-            if (error || !data || data.is_online !== 'online') {
-                alert("Pegawai ini sedang SIBUK atau OFFLINE!");
-                return;
-            }
+            const { data, error } = await supabase.from('employees').select('is_online').eq('code', targetCode).single();
+            if (error || !data || data.is_online !== 'online') { alert("Pegawai ini sedang SIBUK atau OFFLINE!"); return; }
             
-            ui.setupPanel.classList.add('hidden');
-            updateLCD("CALLING...", targetCode, "⧖");
-
-            cleanupConnection().then(() => {
-                connectToRoom(targetCode); 
-            });
+            ui.setupPanel.classList.add('hidden'); updateLCD("CALLING...", targetCode, "⧖");
+            cleanupConnection().then(() => { connectToRoom(targetCode); });
         }
 
         ui.btnHangup.addEventListener('click', () => {
-            ui.setupPanel.classList.remove('hidden');
-            ui.callPanel.classList.add('hidden');
-            updateLCD("STANDBY", myId, "✔");
-            
-            cleanupConnection().then(() => {
-                connectToRoom(myId); 
-            });
+            ui.setupPanel.classList.remove('hidden'); ui.callPanel.classList.add('hidden'); updateLCD("STANDBY", myId, "✔");
+            updateBackgroundNotification("Menunggu Panggilan Masuk...");
+            cleanupConnection().then(() => { connectToRoom(myId); }); // Kembali standby di room sendiri
         });
 
-        ui.btnForceConnect.addEventListener('click', () => {
-            startDevice();
-        });
-
-        ui.btnToggleMic.addEventListener('click', () => {
+        ui.btnForceConnect.addEventListener('click', () => { startDevice(); });
+        ui.btnToggleMic.addEventListener('click', async () => {
+            if (!localStream || localStream.getAudioTracks().length === 0) { await openUserMedia(); }
             if (!localStream) return;
             const audioTrack = localStream.getAudioTracks()[0];
             if (audioTrack) {
-                isMicEnabled = !isMicEnabled;
-                audioTrack.enabled = isMicEnabled;
-                
-                if (isMicEnabled) {
-                    ui.micIcon.innerText = "🎙️";
-                    ui.micBtnText.innerText = "Mic: ON";
-                    ui.micStatusText.innerText = "LIVE";
-                    ui.micStatusIcon.className = "text-green-500 font-bold text-2xl";
-                    ui.micStatusText.className = "text-green-500 text-xs tracking-widest mt-1 animate-pulse";
-                } else {
-                    ui.micIcon.innerText = "🔇";
-                    ui.micBtnText.innerText = "Mic: MUTED";
-                    ui.micStatusText.innerText = "MUTED";
-                    ui.micStatusIcon.className = "text-red-500 font-bold text-2xl";
-                    ui.micStatusText.className = "text-red-500 text-xs tracking-widest mt-1";
-                }
+                isMicEnabled = !isMicEnabled; audioTrack.enabled = isMicEnabled;
+                if (isMicEnabled) { ui.micIcon.innerText = "🎙️"; ui.micBtnText.innerText = "Mic: ON"; ui.micStatusText.innerText = "LIVE"; ui.micStatusIcon.className = "text-green-500 font-bold text-2xl"; ui.micStatusText.className = "text-green-500 text-xs tracking-widest mt-1 animate-pulse"; } 
+                else { ui.micIcon.innerText = "🔇"; ui.micBtnText.innerText = "Mic: MUTED"; ui.micStatusText.innerText = "MUTED"; ui.micStatusIcon.className = "text-red-500 font-bold text-2xl"; ui.micStatusText.className = "text-red-500 text-xs tracking-widest mt-1"; }
             }
         });
 
         function setupAudioLevelMonitor() {
             if (!audioContext) return;
-            
             if (remoteStream) {
-                const rxSource = audioContext.createMediaStreamSource(remoteStream);
-                const rxAnalyzer = audioContext.createAnalyser();
-                rxAnalyzer.fftSize = 256;
-                rxSource.connect(rxAnalyzer);
-                const rxData = new Uint8Array(rxAnalyzer.frequencyBinCount);
-
-                function checkRxLevel() {
-                    if (peerConnection && peerConnection.connectionState === 'connected') {
-                        rxAnalyzer.getByteFrequencyData(rxData);
-                        let sum = 0;
-                        for (let i = 0; i < rxData.length; i++) sum += rxData[i];
-                        ui.rxIndicator.style.opacity = (sum / rxData.length > 5) ? '1' : '0';
-                        requestAnimationFrame(checkRxLevel);
-                    } else {
-                        ui.rxIndicator.style.opacity = '0';
-                    }
-                }
-                checkRxLevel();
+                const rxSource = audioContext.createMediaStreamSource(remoteStream); const rxAnalyzer = audioContext.createAnalyser(); rxAnalyzer.fftSize = 256; rxSource.connect(rxAnalyzer); const rxData = new Uint8Array(rxAnalyzer.frequencyBinCount);
+                function checkRxLevel() { if (peerConnection && peerConnection.connectionState === 'connected') { rxAnalyzer.getByteFrequencyData(rxData); let sum = 0; for (let i = 0; i < rxData.length; i++) sum += rxData[i]; ui.rxIndicator.style.opacity = (sum / rxData.length > 5) ? '1' : '0'; requestAnimationFrame(checkRxLevel); } else { ui.rxIndicator.style.opacity = '0'; } } checkRxLevel();
             }
-
-            if (localStream) {
-                const txSource = audioContext.createMediaStreamSource(localStream);
-                const txAnalyzer = audioContext.createAnalyser();
-                txAnalyzer.fftSize = 256;
-                txSource.connect(txAnalyzer);
-                const txData = new Uint8Array(txAnalyzer.frequencyBinCount);
-
-                function checkTxLevel() {
-                    if (peerConnection && peerConnection.connectionState === 'connected') {
-                        txAnalyzer.getByteFrequencyData(txData);
-                        let sum = 0;
-                        for (let i = 0; i < txData.length; i++) sum += txData[i];
-                        ui.txIndicator.style.opacity = (sum / txData.length > 5) ? '1' : '0';
-                        requestAnimationFrame(checkTxLevel);
-                    } else {
-                        ui.txIndicator.style.opacity = '0';
-                    }
-                }
-                checkTxLevel();
+            if (localStream && localStream.getAudioTracks().length > 0) {
+                const txSource = audioContext.createMediaStreamSource(localStream); const txAnalyzer = audioContext.createAnalyser(); txAnalyzer.fftSize = 256; txSource.connect(txAnalyzer); const txData = new Uint8Array(txAnalyzer.frequencyBinCount);
+                function checkTxLevel() { if (peerConnection && peerConnection.connectionState === 'connected') { txAnalyzer.getByteFrequencyData(txData); let sum = 0; for (let i = 0; i < txData.length; i++) sum += txData[i]; ui.txIndicator.style.opacity = (sum / txData.length > 5) ? '1' : '0'; requestAnimationFrame(checkTxLevel); } else { ui.txIndicator.style.opacity = '0'; } } checkTxLevel();
             }
         }
 
-        // ========================================================
-        // [PERBAIKAN] LOGIKA PENGGANTIAN TREK VIDEO (ON/OFF)
-        // ========================================================
         ui.btnToggleVideo.addEventListener('click', async () => {
-            if (!localStream) return;
-            
+            // Logika ganti video stream sama dengan index_2.html
+            if (!localStream) await openUserMedia();
             if (isVideoEnabled) {
-                // Saat OFF, buang trek video asli, kembalikan ke Dummy Track
-                const videoTrack = localStream.getVideoTracks()[0];
-                if (videoTrack) {
-                    videoTrack.stop(); 
-                    localStream.removeTrack(videoTrack); 
-                }
-                isVideoEnabled = false;
-                ui.videoIcon.innerText = "🚫";
-                ui.videoBtnText.innerText = "Kamera: OFF";
-                ui.localVideo.classList.remove('opacity-100');
-                ui.localVideo.classList.add('opacity-0');
-                
-                updateVideoModeUI(); 
-
-                if (dataChannel && dataChannel.readyState === 'open') {
-                    dataChannel.send(JSON.stringify({ type: 'VIDEO_TOGGLE', state: false }));
-                }
-                
-                const dummyTrack = createEmptyVideoTrack();
-                localStream.addTrack(dummyTrack);
-
-                if (peerConnection) {
-                    const senders = peerConnection.getSenders();
-                    const videoSender = senders.find(s => s.track && s.track.kind === 'video');
-                    if (videoSender) {
-                        videoSender.replaceTrack(dummyTrack);
-                    }
-                }
+                const videoTrack = localStream.getVideoTracks()[0]; if (videoTrack) { videoTrack.stop(); localStream.removeTrack(videoTrack); }
+                isVideoEnabled = false; ui.videoIcon.innerText = "🚫"; ui.videoBtnText.innerText = "Kamera: OFF"; ui.localVideo.classList.remove('opacity-100'); ui.localVideo.classList.add('opacity-0'); updateVideoModeUI(); 
+                if (dataChannel && dataChannel.readyState === 'open') { dataChannel.send(JSON.stringify({ type: 'VIDEO_TOGGLE', state: false })); }
+                const dummyTrack = createEmptyVideoTrack(); localStream.addTrack(dummyTrack);
+                if (peerConnection) { const videoSender = peerConnection.getSenders().find(s => s.track && s.track.kind === 'video'); if (videoSender) videoSender.replaceTrack(dummyTrack); }
             } else {
                 try {
-                    // Saat ON, minta kamera dan ganti Dummy Track
-                    const newStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-                    const newVideoTrack = newStream.getVideoTracks()[0];
-                    
-                    const oldDummy = localStream.getVideoTracks()[0];
-                    if (oldDummy) {
-                        localStream.removeTrack(oldDummy);
-                        oldDummy.stop();
-                    }
-                    
-                    localStream.addTrack(newVideoTrack);
-                    ui.localVideo.srcObject = new MediaStream([newVideoTrack]);
-                    
-                    if (peerConnection) {
-                        const senders = peerConnection.getSenders();
-                        // Lebih aman mencari berdasarkan Sender yang membawa video
-                        const videoSender = senders.find(s => s.track && s.track.kind === 'video');
-                        if (videoSender) {
-                            await videoSender.replaceTrack(newVideoTrack);
-                        }
-                    }
-                    
-                    isVideoEnabled = true;
-                    ui.videoIcon.innerText = "📷";
-                    ui.videoBtnText.innerText = "Kamera: ON";
-                    ui.localVideo.classList.remove('opacity-0');
-                    ui.localVideo.classList.add('opacity-100');
-                    
-                    updateVideoModeUI(); 
-
-                    if (dataChannel && dataChannel.readyState === 'open') {
-                        dataChannel.send(JSON.stringify({ type: 'VIDEO_TOGGLE', state: true }));
-                    }
-                } catch (error) {
-                    alert("Kamera gagal diakses atau tidak ada izin.");
-                }
+                    const newStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }); const newVideoTrack = newStream.getVideoTracks()[0];
+                    const oldDummy = localStream.getVideoTracks()[0]; if (oldDummy) { localStream.removeTrack(oldDummy); oldDummy.stop(); }
+                    localStream.addTrack(newVideoTrack); ui.localVideo.srcObject = new MediaStream([newVideoTrack]);
+                    if (peerConnection) { const videoSender = peerConnection.getSenders().find(s => s.track && s.track.kind === 'video'); if (videoSender) await videoSender.replaceTrack(newVideoTrack); }
+                    isVideoEnabled = true; ui.videoIcon.innerText = "📷"; ui.videoBtnText.innerText = "Kamera: ON"; ui.localVideo.classList.remove('opacity-0'); ui.localVideo.classList.add('opacity-100'); updateVideoModeUI(); 
+                    if (dataChannel && dataChannel.readyState === 'open') { dataChannel.send(JSON.stringify({ type: 'VIDEO_TOGGLE', state: true })); }
+                } catch (error) { alert("Kamera gagal diakses."); }
             }
         });
-
-        function updateLCD(status, roomStr, icon) {
-            ui.lcdStatus.innerText = status;
-            ui.lcdRoomText.innerText = roomStr || "---";
-            ui.statusIcon.innerText = icon || "";
-        }
-
-        function showCallPanel(activeRoomId) {
-            ui.setupPanel.classList.add('hidden');
-            ui.callPanel.classList.remove('hidden');
-            ui.lcdRoomText.innerText = activeRoomId;
-        }
-
-        function showSetupPanel() {
-            ui.setupPanel.classList.remove('hidden');
-            ui.callPanel.classList.add('hidden');
-            ui.lcdRoomText.innerText = myId;
-            ui.lcd.classList.remove('video-mode'); 
-            
-            if(myId) loadContacts();
-        }
 
         checkAuth();
-        
         window.addEventListener('beforeunload', () => {
-            stopHeartbeat();
-            if (contactsSubscription) supabase.removeChannel(contactsSubscription);
-            if (myId) supabase.from('employees').update({ 
-                is_online: 'offline', 
-                last_seen: new Date().toISOString() 
-            }).eq('code', myId).then();
-            cleanupConnection();
-            if (localStream) localStream.getTracks().forEach(track => track.stop());
+            stopHeartbeat(); if (contactsSubscription) supabase.removeChannel(contactsSubscription);
+            if (myId) supabase.from('employees').update({ is_online: 'offline', last_seen: new Date().toISOString() }).eq('code', myId).then();
+            cleanupConnection(); if (localStream) stopLocalMedia();
         });
-
-        window.addEventListener('offline', () => {
-            if (myId) {
-                stopHeartbeat();
-                supabase.from('employees').update({ 
-                    is_online: 'offline', 
-                    last_seen: new Date().toISOString() 
-                }).eq('code', myId);
-                updateLCD("NO NET", "...", "✖");
-            }
-        });
-
-        window.addEventListener('online', () => {
-            if (myId) {
-                startHeartbeat();
-                const status = (peerConnection && peerConnection.connectionState === 'connected') ? 'busy' : 'online';
-                supabase.from('employees').update({ 
-                    is_online: status, 
-                    last_seen: new Date().toISOString() 
-                }).eq('code', myId);
-                updateLCD(status === 'busy' ? "CONNECTED" : "STANDBY", roomId || myId, "✔");
-            }
-        });
+        window.addEventListener('offline', () => { if (myId) { stopHeartbeat(); supabase.from('employees').update({ is_online: 'offline', last_seen: new Date().toISOString() }).eq('code', myId); updateLCD("NO NET", "...", "✖"); } });
+        window.addEventListener('online', () => { if (myId) { startHeartbeat(); const status = (peerConnection && peerConnection.connectionState === 'connected') ? 'busy' : 'online'; supabase.from('employees').update({ is_online: status, last_seen: new Date().toISOString() }).eq('code', myId); updateLCD(status === 'busy' ? "CONNECTED" : "STANDBY", roomId || myId, "✔"); } });
     </script>
-    
 </body>
 </html>
