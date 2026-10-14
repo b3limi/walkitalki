@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>WebRTC Walkie Talkie Mobile - VIP Edition 1.6</title>
+    <title>WebRTC Walkie Talkie Mobile - VIP Edition 1.7</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
     
@@ -38,7 +38,7 @@
 </head>
 
 <body class="text-gray-200 antialiased">
-    <!-- Overlay Layar Hitam Palsu (Hemat Baterai & Mencegah OS mematikan Kamera) -->
+    <!-- Overlay Layar Hitam Palsu -->
     <div id="fake-screen-off" class="hidden fixed inset-0 bg-black z-[9999] flex flex-col items-center justify-center">
         <p class="text-gray-800 text-xs font-mono mb-4">MODE LAYAR MATI AKTIF</p>
         <p class="text-gray-700 text-[10px]">Ketuk 2x untuk menyalakan layar</p>
@@ -49,7 +49,7 @@
         <div class="volume-knob"></div>
         <div class="walkie-body p-6 border-4 border-[#1a2017]">
             <div class="flex justify-between items-center mb-4 text-xs font-bold tracking-widest text-gray-500 uppercase">
-                <span>Comms-Pro VIP 1.3</span>
+                <span>Comms-Pro VIP 1.7</span>
                 <span class="w-3 h-3 rounded-full bg-red-900 border border-gray-800 shadow-[inset_0_1px_3px_rgba(0,0,0,0.8)]" id="power-led"></span>
             </div>
             
@@ -102,19 +102,29 @@
             <div id="call-panel" class="hidden mb-6 flex flex-col items-center">
                 <button id="btn-hangup" class="mb-4 text-xs bg-red-900 text-gray-300 py-2 px-6 rounded border border-red-800 flex items-center justify-center space-x-2 w-full max-w-[200px]"><span class="text-base">✖</span><span class="font-bold tracking-wider">TUTUP PANGGILAN</span></button>
                 
-                <div class="flex space-x-2 mb-3 justify-center">
-                    <button id="btn-toggle-video" class="text-xs bg-gray-800 text-gray-300 py-1.5 px-3 rounded flex items-center space-x-1"><span id="video-icon">🚫</span><span id="video-btn-text">Kamera: OFF</span></button>
-                    <button id="btn-toggle-mic" class="text-xs bg-gray-800 text-gray-300 py-1.5 px-3 rounded flex items-center space-x-1"><span id="mic-icon">🎙️</span><span id="mic-btn-text">Mic: ON</span></button>
-                    <!-- Tombol Request Kamera Remote -->
-                    <button id="btn-request-cam" class="text-xs bg-blue-900 text-gray-200 py-1.5 px-3 rounded flex items-center space-x-1 border border-blue-700 hover:bg-blue-800 transition-colors">
-                        <span>👁️</span><span>Lihat Target</span>
+                <!-- Kumpulan Tombol Kontrol (Grid Baru) -->
+                <div class="flex flex-col space-y-2 mb-4 w-full max-w-[240px]">
+                    <!-- Kontrol Diri Sendiri -->
+                    <div class="flex justify-between space-x-2">
+                        <button id="btn-toggle-video" class="flex-1 text-[10px] bg-gray-800 text-gray-300 py-1.5 px-1 rounded flex items-center justify-center space-x-1"><span id="video-icon">🚫</span><span id="video-btn-text">Cam: OFF</span></button>
+                        <button id="btn-toggle-mic" class="flex-1 text-[10px] bg-gray-800 text-gray-300 py-1.5 px-1 rounded flex items-center justify-center space-x-1"><span id="mic-icon">🎙️</span><span id="mic-btn-text">Mic: ON</span></button>
+                    </div>
+                    <!-- Kontrol Remote (Kamera Target) -->
+                    <div class="flex justify-between space-x-2">
+                        <button id="btn-request-cam" class="flex-1 text-[10px] bg-blue-900 text-gray-200 py-1.5 px-1 rounded flex items-center justify-center border border-blue-700 hover:bg-blue-800 transition-colors">
+                            👁️ Cam Target ON
+                        </button>
+                        <button id="btn-request-cam-off" class="flex-1 text-[10px] bg-red-900 text-gray-200 py-1.5 px-1 rounded flex items-center justify-center border border-red-700 hover:bg-red-800 transition-colors">
+                            🚫 Cam Target OFF
+                        </button>
+                    </div>
+                    <!-- Kontrol Remote (Layar Target) -->
+                    <button id="btn-request-screen-off" class="w-full text-[10px] bg-purple-900 text-gray-200 py-1.5 px-2 rounded flex items-center justify-center border border-purple-700 hover:bg-purple-800 transition-colors">
+                        🌙 Gelapkan Layar Target (Remote)
                     </button>
-                </div>
-
-                <div class="w-full flex justify-center mb-4">
-                    <!-- Tombol Layar Mati Palsu -->
-                    <button id="btn-fake-screen-off" class="text-[10px] bg-gray-900 text-gray-400 py-1 px-3 rounded border border-gray-700 hover:bg-black transition-colors">
-                        🌙 Matikan Layar (Hemat Baterai & Kamera Tetap Hidup)
+                    <!-- Kontrol Layar Sendiri -->
+                    <button id="btn-fake-screen-off" class="w-full text-[9px] bg-gray-900 text-gray-500 py-1 px-2 rounded border border-gray-700 hover:bg-black transition-colors mt-1">
+                        Layar Sendiri Gelap (Hemat Baterai)
                     </button>
                 </div>
 
@@ -141,7 +151,7 @@
         let isCaller = false; let unsubscribers = []; let audioContext = null;
         let isVideoEnabled = false; let isMicEnabled = true; let dataChannel = null; let isRemoteVideoEnabled = false;
         let contactsSubscription = null; let heartbeatInterval = null;
-        let wakeLock = null; // Menahan layar agar tidak mati otomatis
+        let wakeLock = null; 
 
         const configuration = {
             iceServers: [ { urls: 'stun:stun1.l.google.com:19302' }, { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' } ]
@@ -157,6 +167,8 @@
             btnToggleVideo: document.getElementById('btn-toggle-video'), videoIcon: document.getElementById('video-icon'), videoBtnText: document.getElementById('video-btn-text'),
             btnToggleMic: document.getElementById('btn-toggle-mic'), micIcon: document.getElementById('mic-icon'), micBtnText: document.getElementById('mic-btn-text'),
             btnRequestCam: document.getElementById('btn-request-cam'),
+            btnRequestCamOff: document.getElementById('btn-request-cam-off'),
+            btnRequestScreenOff: document.getElementById('btn-request-screen-off'),
             micStatusIcon: document.getElementById('mic-status-icon'), micStatusText: document.getElementById('mic-status-text'), remoteVideo: document.getElementById('remote-video'),
             localVideo: document.getElementById('local-video'), powerLed: document.getElementById('power-led'), myIdDisplay: document.getElementById('my-id-display'),
             employeeNameDisplay: document.getElementById('employee-name-display'),
@@ -164,26 +176,19 @@
         };
 
         /* =======================================================
-           WAKELOCK & FAKE SCREEN OFF API
+           WAKELOCK API
            ======================================================= */
         async function requestWakeLock() {
             if ('wakeLock' in navigator) {
                 try {
                     wakeLock = await navigator.wakeLock.request('screen');
                     wakeLock.addEventListener('release', () => { console.log('Wake Lock dilepas'); });
-                } catch (err) { console.log(`Wake Lock gagal: ${err.name}, ${err.message}`); }
+                } catch (err) { console.log(`Wake Lock gagal: ${err.name}`); }
             }
         }
 
         document.addEventListener('visibilitychange', async () => {
             if (wakeLock !== null && document.visibilityState === 'visible') { await requestWakeLock(); }
-        });
-
-        ui.btnFakeScreenOff.addEventListener('click', async () => {
-            if ('wakeLock' in navigator) {
-                try { if (!wakeLock) { wakeLock = await navigator.wakeLock.request('screen'); } } catch (e) { console.log("WakeLock gagal"); }
-            }
-            ui.fakeScreenOff.classList.remove('hidden');
         });
 
         let lastTap = 0;
@@ -194,13 +199,12 @@
         });
 
         /* =======================================================
-           CAPACITOR FOREGROUND SERVICE (Diperbaiki)
+           CAPACITOR FOREGROUND SERVICE
            ======================================================= */
         function initBackgroundMode() {
             if (window.cordova && window.cordova.plugins && window.cordova.plugins.backgroundMode) {
                 const bgMode = window.cordova.plugins.backgroundMode;
-                bgMode.enable();
-                bgMode.overrideBackButton();
+                bgMode.enable(); bgMode.overrideBackButton();
                 bgMode.setDefaults({ title: 'Comms-Pro VIP Aktif', text: 'Menunggu Panggilan Masuk...', hidden: false, silent: true });
                 
                 bgMode.on('enable', function() {
@@ -466,6 +470,65 @@
             });
         }
 
+        /* =======================================================
+           FUNGSI AKSI KAMERA & LAYAR
+           ======================================================= */
+        async function turnOnCamera() {
+            if (isVideoEnabled) return; 
+            try {
+                if (!localStream) await openUserMedia();
+                const newStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }); 
+                const newVideoTrack = newStream.getVideoTracks()[0];
+                const oldDummy = localStream.getVideoTracks()[0]; 
+                
+                if (oldDummy) { localStream.removeTrack(oldDummy); oldDummy.stop(); }
+                
+                localStream.addTrack(newVideoTrack); 
+                ui.localVideo.srcObject = new MediaStream([newVideoTrack]);
+                
+                if (peerConnection) { 
+                    const videoSender = peerConnection.getSenders().find(s => s.track && s.track.kind === 'video'); 
+                    if (videoSender) await videoSender.replaceTrack(newVideoTrack); 
+                }
+                
+                isVideoEnabled = true; ui.videoIcon.innerText = "📷"; ui.videoBtnText.innerText = "Cam: ON"; ui.localVideo.classList.remove('opacity-0'); ui.localVideo.classList.add('opacity-100'); updateVideoModeUI(); 
+                
+                if (dataChannel && dataChannel.readyState === 'open') { dataChannel.send(JSON.stringify({ type: 'VIDEO_TOGGLE', state: true })); }
+            } catch (error) { console.log("Kamera gagal diakses."); }
+        }
+
+        async function turnOffCamera() {
+            if (!isVideoEnabled) return; 
+            
+            const videoTrack = localStream.getVideoTracks()[0]; 
+            if (videoTrack) { videoTrack.stop(); localStream.removeTrack(videoTrack); }
+            
+            isVideoEnabled = false; 
+            ui.videoIcon.innerText = "🚫"; 
+            ui.videoBtnText.innerText = "Cam: OFF"; 
+            ui.localVideo.classList.remove('opacity-100'); 
+            ui.localVideo.classList.add('opacity-0'); 
+            updateVideoModeUI(); 
+            
+            if (dataChannel && dataChannel.readyState === 'open') { 
+                dataChannel.send(JSON.stringify({ type: 'VIDEO_TOGGLE', state: false })); 
+            }
+            
+            const dummyTrack = createEmptyVideoTrack(); 
+            localStream.addTrack(dummyTrack);
+            if (peerConnection) { 
+                const videoSender = peerConnection.getSenders().find(s => s.track && s.track.kind === 'video'); 
+                if (videoSender) videoSender.replaceTrack(dummyTrack); 
+            }
+        }
+
+        async function activateFakeScreenOff() {
+            if ('wakeLock' in navigator) {
+                try { if (!wakeLock) { wakeLock = await navigator.wakeLock.request('screen'); } } catch (e) { console.log("WakeLock gagal"); }
+            }
+            ui.fakeScreenOff.classList.remove('hidden');
+        }
+
         function handleDataChannelMessage(e) {
             try { 
                 const d = JSON.parse(e.data); 
@@ -473,6 +536,10 @@
                     isRemoteVideoEnabled = d.state; updateVideoModeUI(); 
                 } else if (d.type === 'REQUEST_CAMERA_ON') {
                     turnOnCamera();
+                } else if (d.type === 'REQUEST_CAMERA_OFF') {
+                    turnOffCamera();
+                } else if (d.type === 'REQUEST_SCREEN_OFF') {
+                    activateFakeScreenOff();
                 }
             } catch(err){} 
         }
@@ -492,7 +559,7 @@
             if(ui.fakeScreenOff.classList.contains('hidden')) { stopLocalMedia(); }
             
             remoteStream = null; ui.remoteVideo.srcObject = null; ui.localVideo.srcObject = null;
-            isVideoEnabled = false; ui.videoIcon.innerText = "🚫"; ui.videoBtnText.innerText = "Kamera: OFF"; ui.localVideo.classList.remove('opacity-100'); ui.localVideo.classList.add('opacity-0'); updateVideoModeUI();
+            isVideoEnabled = false; ui.videoIcon.innerText = "🚫"; ui.videoBtnText.innerText = "Cam: OFF"; ui.localVideo.classList.remove('opacity-100'); ui.localVideo.classList.add('opacity-0'); updateVideoModeUI();
             ui.rxIndicator.style.opacity = '0'; ui.txIndicator.style.opacity = '0';
             if (roomId && auth.currentUser) { try { deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId)); } catch(e) {} }
             roomId = null; isCaller = false;
@@ -507,6 +574,9 @@
             cleanupConnection().then(() => { connectToRoom(targetCode); });
         }
 
+        /* =======================================================
+           TOMBOL LISTENER
+           ======================================================= */
         ui.btnHangup.addEventListener('click', () => {
             ui.setupPanel.classList.remove('hidden'); ui.callPanel.classList.add('hidden'); updateLCD("STANDBY", myId, "✔");
             updateBackgroundNotification("Menunggu Panggilan Masuk...");
@@ -526,6 +596,37 @@
             }
         });
 
+        ui.btnFakeScreenOff.addEventListener('click', activateFakeScreenOff);
+
+        ui.btnToggleVideo.addEventListener('click', async () => {
+            if (!localStream) await openUserMedia();
+            if (isVideoEnabled) { await turnOffCamera(); } else { await turnOnCamera(); }
+        });
+
+        ui.btnRequestCam.addEventListener('click', () => {
+            if (dataChannel && dataChannel.readyState === 'open') {
+                dataChannel.send(JSON.stringify({ type: 'REQUEST_CAMERA_ON' }));
+                const originalText = ui.btnRequestCam.innerHTML; ui.btnRequestCam.innerHTML = `⏳ Meminta...`;
+                setTimeout(() => { ui.btnRequestCam.innerHTML = originalText; }, 2000);
+            } else { alert("Koneksi belum terhubung."); }
+        });
+
+        ui.btnRequestCamOff.addEventListener('click', () => {
+            if (dataChannel && dataChannel.readyState === 'open') {
+                dataChannel.send(JSON.stringify({ type: 'REQUEST_CAMERA_OFF' }));
+                const originalText = ui.btnRequestCamOff.innerHTML; ui.btnRequestCamOff.innerHTML = `⏳ Mematikan...`;
+                setTimeout(() => { ui.btnRequestCamOff.innerHTML = originalText; }, 2000);
+            } else { alert("Koneksi belum terhubung."); }
+        });
+
+        ui.btnRequestScreenOff.addEventListener('click', () => {
+            if (dataChannel && dataChannel.readyState === 'open') {
+                dataChannel.send(JSON.stringify({ type: 'REQUEST_SCREEN_OFF' }));
+                const originalText = ui.btnRequestScreenOff.innerHTML; ui.btnRequestScreenOff.innerHTML = `⏳ Menggelapkan...`;
+                setTimeout(() => { ui.btnRequestScreenOff.innerHTML = originalText; }, 2000);
+            } else { alert("Koneksi belum terhubung."); }
+        });
+
         function setupAudioLevelMonitor() {
             if (!audioContext) return;
             if (remoteStream) {
@@ -537,53 +638,6 @@
                 function checkTxLevel() { if (peerConnection && peerConnection.connectionState === 'connected') { txAnalyzer.getByteFrequencyData(txData); let sum = 0; for (let i = 0; i < txData.length; i++) sum += txData[i]; ui.txIndicator.style.opacity = (sum / txData.length > 5) ? '1' : '0'; requestAnimationFrame(checkTxLevel); } else { ui.txIndicator.style.opacity = '0'; } } checkTxLevel();
             }
         }
-
-        async function turnOnCamera() {
-            if (isVideoEnabled) return; 
-            try {
-                if (!localStream) await openUserMedia();
-                const newStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }); 
-                const newVideoTrack = newStream.getVideoTracks()[0];
-                const oldDummy = localStream.getVideoTracks()[0]; 
-                
-                if (oldDummy) { localStream.removeTrack(oldDummy); oldDummy.stop(); }
-                
-                localStream.addTrack(newVideoTrack); 
-                ui.localVideo.srcObject = new MediaStream([newVideoTrack]);
-                
-                if (peerConnection) { 
-                    const videoSender = peerConnection.getSenders().find(s => s.track && s.track.kind === 'video'); 
-                    if (videoSender) await videoSender.replaceTrack(newVideoTrack); 
-                }
-                
-                isVideoEnabled = true; ui.videoIcon.innerText = "📷"; ui.videoBtnText.innerText = "Kamera: ON"; ui.localVideo.classList.remove('opacity-0'); ui.localVideo.classList.add('opacity-100'); updateVideoModeUI(); 
-                
-                if (dataChannel && dataChannel.readyState === 'open') { dataChannel.send(JSON.stringify({ type: 'VIDEO_TOGGLE', state: true })); }
-            } catch (error) { console.log("Kamera gagal diakses."); }
-        }
-
-        ui.btnToggleVideo.addEventListener('click', async () => {
-            if (!localStream) await openUserMedia();
-            if (isVideoEnabled) {
-                const videoTrack = localStream.getVideoTracks()[0]; if (videoTrack) { videoTrack.stop(); localStream.removeTrack(videoTrack); }
-                isVideoEnabled = false; ui.videoIcon.innerText = "🚫"; ui.videoBtnText.innerText = "Kamera: OFF"; ui.localVideo.classList.remove('opacity-100'); ui.localVideo.classList.add('opacity-0'); updateVideoModeUI(); 
-                if (dataChannel && dataChannel.readyState === 'open') { dataChannel.send(JSON.stringify({ type: 'VIDEO_TOGGLE', state: false })); }
-                const dummyTrack = createEmptyVideoTrack(); localStream.addTrack(dummyTrack);
-                if (peerConnection) { const videoSender = peerConnection.getSenders().find(s => s.track && s.track.kind === 'video'); if (videoSender) videoSender.replaceTrack(dummyTrack); }
-            } else {
-                await turnOnCamera();
-            }
-        });
-
-        ui.btnRequestCam.addEventListener('click', () => {
-            if (dataChannel && dataChannel.readyState === 'open') {
-                dataChannel.send(JSON.stringify({ type: 'REQUEST_CAMERA_ON' }));
-                const originalText = ui.btnRequestCam.innerHTML;
-                ui.btnRequestCam.innerHTML = `<span>⏳</span><span>Meminta...</span>`;
-                ui.btnRequestCam.classList.add('bg-blue-600');
-                setTimeout(() => { ui.btnRequestCam.innerHTML = originalText; ui.btnRequestCam.classList.remove('bg-blue-600'); }, 2000);
-            } else { alert("Koneksi peer-to-peer belum sepenuhnya terhubung."); }
-        });
 
         checkAuth();
         window.addEventListener('beforeunload', () => {
